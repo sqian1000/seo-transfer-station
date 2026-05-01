@@ -21,7 +21,13 @@ export default defineConfig({
     })
   ],
   vite: {
-    plugins: [tailwindcss(), ViteToml()]
+    plugins: [tailwindcss(), ViteToml()],
+    server: {
+      allowedHosts: ['docs.531288.xyz']
+    },
+    preview: {
+      allowedHosts: ['docs.531288.xyz']
+    }
   },
   env: {
     schema: {
