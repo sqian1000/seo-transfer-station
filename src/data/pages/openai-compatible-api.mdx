@@ -14,13 +14,13 @@ OpenAI compatible API 的核心，是让客户端把请求发到自定义 `base_
 
 | 字段 | 说明 |
 |---|---|
-| `base_url` / `openai_base_url` | 示例：`https://YOUR_API_DOMAIN/v1` 或后台要求的兼容入口 |
-| `OPENAI_API_KEY` | 控制台生成的 API Key |
-| `model` | 以控制台展示为准，不猜测官方 model id |
+| `base_url` / `openai_base_url` | 示例：`https://www.531288.xyz/v1` 或账户页面显示的兼容入口 |
+| `OPENAI_API_KEY` | 账户页面生成的 API Key |
+| `model` | 以账户页面展示为准，不猜测官方 model id |
 | `timeout` | 建议生产环境显式设置超时 |
 | `retry` | 对 429、5xx 设置有限次数的退避重试 |
 
-真实地址以后台复制结果为准；本文只保留 `YOUR_API_DOMAIN` 占位。
+本文统一使用自有中转地址 `https://www.531288.xyz`。OpenAI 兼容 SDK 通常填写 `https://www.531288.xyz/v1`。
 
 ## 最小 SDK 示例
 
@@ -29,11 +29,11 @@ import OpenAI from "openai";
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  baseURL: "https://YOUR_API_DOMAIN/v1",
+  baseURL: "https://www.531288.xyz/v1",
 });
 
 const res = await client.chat.completions.create({
-  model: "后台展示的模型名",
+  model: "账户页面展示的模型名",
   messages: [{ role: "user", content: "请回复配置已生效" }],
 });
 ```
@@ -41,9 +41,9 @@ const res = await client.chat.completions.create({
 ## Cursor / Cline / Roo Code 通用检查
 
 1. Provider 选择 OpenAI compatible 或自定义兼容接口。
-2. Base URL 填后台给出的兼容入口。
+2. Base URL 填`https://www.531288.xyz/v1`。
 3. API Key 使用当前项目 Key，不复用高权限主 Key。
-4. Model 使用后台模型列表展示值。
+4. Model 使用账户页面模型列表展示值。
 5. 出现 401、404、429 时，不要先重装客户端，先检查 Key、路径、模型名和余额。
 
 ## 排错优先级

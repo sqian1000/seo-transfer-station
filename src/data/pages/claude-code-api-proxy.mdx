@@ -22,11 +22,11 @@ tags:
 
 | 信息 | 从哪里拿 | 示例 |
 |---|---|---|
-| API Key | 中转站后台 | `sk-xxxxxxxxxxxxxxxx` |
-| Base URL | 后台或线路表 | `https://YOUR_API_DOMAIN` |
+| API Key | 账户页面 | `sk-xxxxxxxxxxxxxxxx` |
+| Base URL | 本站统一地址 | `https://www.531288.xyz` |
 | 压缩阈值 | 自行决定 | `78` 或 `80` |
 
-本文不写死具体中转地址。真实地址以后台复制结果为准。
+本站统一使用 `https://www.531288.xyz`。如果服务地址后续调整，会在官网同步更新。
 
 ## 找到 settings.json
 
@@ -56,7 +56,7 @@ Finder 可按 `Cmd + Shift + G`，输入 `~/.claude`。
 {
   "env": {
     "ANTHROPIC_API_KEY": "sk-xxxxxxxxxxxxxxxx",
-    "ANTHROPIC_BASE_URL": "https://YOUR_API_DOMAIN",
+    "ANTHROPIC_BASE_URL": "https://www.531288.xyz",
     "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "78"
   }
 }
@@ -69,7 +69,7 @@ Finder 可按 `Cmd + Shift + G`，输入 `~/.claude`。
   "env": {
     "已有配置": "保留",
     "ANTHROPIC_API_KEY": "sk-xxxxxxxxxxxxxxxx",
-    "ANTHROPIC_BASE_URL": "https://YOUR_API_DOMAIN",
+    "ANTHROPIC_BASE_URL": "https://www.531288.xyz",
     "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "78"
   }
 }
@@ -87,14 +87,14 @@ Finder 可按 `Cmd + Shift + G`，输入 `~/.claude`。
 请回复“配置已生效”。
 ```
 
-能收到回复就完成。如果提示认证失败，优先检查 Key；如果提示连接失败，优先检查 Base URL 和线路。
+能收到回复就完成。如果提示认证失败，优先检查 Key；如果提示连接失败，优先检查 Base URL 和网络。
 
 ## 排错清单
 
 | 现象 | 可能原因 | 处理方式 |
 |---|---|---|
 | Unauthorized / 认证失败 | Key 错了或多了空格 | 重新复制 API Key |
-| Connection Error / 连接失败 | Base URL 错或线路不可用 | 换线路，URL 末尾不要乱加 `/` |
+| Connection Error / 连接失败 | Base URL 错或网络不可用 | 确认地址为 `https://www.531288.xyz`，URL 末尾不要乱加 `/` |
 | 保存后没变化 | 改错文件 | 确认路径是 `.claude/settings.json` |
 | 设置不生效 | 旧进程还在 | 完全退出 Claude Code 和终端 |
 | JSON 报错 | 少逗号或多逗号 | 用 JSON 校验工具检查格式 |

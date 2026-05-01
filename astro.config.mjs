@@ -7,7 +7,7 @@ import sitemap from '@astrojs/sitemap';
 import { ViteToml } from 'vite-plugin-toml';
 import tailwindcss from '@tailwindcss/vite';
 
-const site = "https://YOUR_API_DOMAIN";
+const site = "https://www.531288.xyz";
 
 // https://astro.build/config
 export default defineConfig({

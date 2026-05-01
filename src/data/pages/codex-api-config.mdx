@@ -14,7 +14,7 @@ tags:
 
 ## 适合谁看
 
-- ccswitch 配置 Codex 后仍然走默认线路。
+- ccswitch 配置 Codex 后仍然走默认配置。
 - 想检查 Codex 的 `config.toml` 和 `auth.json`。
 - 需要手动切换模型提供商或 Base URL。
 
@@ -22,11 +22,11 @@ tags:
 
 | 信息 | 从哪里拿 | 示例 |
 |---|---|---|
-| API Key | 中转站后台 | `sk-xxxxxxxxxxxxxxxx` |
-| Base URL | 后台或线路表 | `https://YOUR_API_DOMAIN` |
-| 模型名 | 后台模型列表 | `gpt-5.4` |
+| API Key | 账户页面 | `sk-xxxxxxxxxxxxxxxx` |
+| Base URL | 本站统一地址 | `https://www.531288.xyz` |
+| 模型名 | 账户页面模型列表 | `gpt-5.4` |
 
-真实 Base URL 以后台为准，SEO 页面不写死具体线路地址。
+本站统一使用 `https://www.531288.xyz`。如果服务地址后续调整，会在官网同步更新。
 
 ## 找到 Codex 配置目录
 
@@ -56,7 +56,7 @@ model = "gpt-5.4"
 
 [model_providers.custom]
 name = "custom"
-base_url = "https://YOUR_API_DOMAIN"
+base_url = "https://www.531288.xyz"
 wire_api = "responses"
 requires_openai_auth = true
 ```
@@ -102,8 +102,8 @@ codex
 | 现象 | 可能原因 | 处理方式 |
 |---|---|---|
 | 仍然走默认配置 | `config.toml` 路径写错或 `model_provider` 没指向 custom | 确认文件在用户目录 `.codex` 下 |
-| 鉴权失败 / 401 | `auth.json` 路径写错或 Key 错 | 重新从后台复制 API Key |
-| 连接失败 | Base URL 错或线路不可用 | 换线路，确认 Base URL 完整 |
+| 鉴权失败 / 401 | `auth.json` 路径写错或 Key 错 | 重新生成或复制 API Key |
+| 连接失败 | Base URL 错或网络不可用 | 确认 Base URL 为 `https://www.531288.xyz` |
 | TOML 报错 | `config.toml` 格式不合法 | 检查引号、空行和表头 |
 | JSON 报错 | `auth.json` 格式不合法 | 检查双引号、逗号和花括号 |
 | 改完没反应 | 旧终端或旧 Codex 进程仍在 | 完全关闭后重新打开 |

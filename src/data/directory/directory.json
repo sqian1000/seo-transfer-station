@@ -1,14 +1,114 @@
 [
-  {"id":"claude-code-api-proxy","title":"Claude Code 中转配置","featured":true,"tags":["docs-seo","technical-seo"],"description":"面向 Claude Code 的 API Base URL、ANTHROPIC_AUTH_TOKEN、模型名与 /status 检查说明，适合国内开发环境快速接入。","link":"https://YOUR_API_DOMAIN/#quickstart"},
-  {"id":"codex-api-config","title":"Codex API 配置指南","featured":true,"tags":["docs-seo","technical-seo"],"description":"整理 Codex / OpenAI 兼容客户端的 openai_base_url、model_provider、API Key 与最小测试请求。","link":"https://YOUR_API_DOMAIN/#manual-config"},
-  {"id":"openai-compatible-api","title":"OpenAI 兼容接口说明","featured":true,"tags":["technical-seo","templates"],"description":"解释 OpenAI compatible API 的 base_url、/v1 路径、模型映射和 SDK 迁移注意事项。","link":"https://YOUR_API_DOMAIN/#manual-config"},
-  {"id":"model-pricing-matrix","title":"模型与价格矩阵","featured":true,"tags":["analytics","templates"],"description":"用于展示 Claude、GPT、Gemini、DeepSeek 等模型的支持状态、价格倍率、上下文和使用建议。","link":"https://YOUR_API_DOMAIN/#pricing"},
-  {"id":"gateway-status-panel","title":"线路状态面板","tags":["transfer-tracking","analytics"],"description":"区分 API 网关、模型上游、备用线路和维护公告，帮助用户判断是配置问题还是服务波动。","link":"https://YOUR_API_DOMAIN/#pricing"},
-  {"id":"troubleshooting-401-invalid-key","title":"401 Invalid Key 排查","tags":["docs-seo","technical-seo"],"description":"检查 API Key、Bearer Token、环境变量刷新、客户端旧配置和控制台 Key 状态。","link":"https://YOUR_API_DOMAIN/#troubleshooting"},
-  {"id":"troubleshooting-model-not-found","title":"Model Not Found 排查","tags":["docs-seo","technical-seo"],"description":"定位模型名拼写、模型映射、客户端 provider 选择和套餐权限问题。","link":"https://YOUR_API_DOMAIN/#troubleshooting"},
-  {"id":"troubleshooting-rate-limit","title":"429 限流与余额排查","tags":["docs-seo","analytics"],"description":"解释并发、速率限制、余额不足、套餐限制和上游限流的区别，并给出降级建议。","link":"https://YOUR_API_DOMAIN/#troubleshooting"},
-  {"id":"cursor-api-config","title":"Cursor API 配置入口","tags":["docs-seo","productivity"],"description":"面向 Cursor、自定义模型和 OpenAI 兼容配置的接入说明入口。","link":"https://YOUR_API_DOMAIN/#quickstart"},
-  {"id":"cline-roo-code-config","title":"Cline / Roo Code 配置入口","tags":["docs-seo","productivity"],"description":"整理 Cline、Roo Code 等 AI 编程工具的 API Base URL、模型和 Key 配置注意事项。","link":"https://YOUR_API_DOMAIN/#quickstart"},
-  {"id":"api-key-safety-checklist","title":"API Key 安全清单","tags":["technical-seo","templates"],"description":"购买和使用前确认 Key 分组、预算上限、日志策略、敏感信息保护和团队权限。","link":"https://YOUR_API_DOMAIN/#production"},
-  {"id":"go-click-analytics","title":"/go/ 点击追踪方案","tags":["transfer-tracking","analytics"],"description":"把控制台、客服、社群、下载和外部文档入口统一走 noindex 中转页，方便统计转化意图。","link":"https://YOUR_API_DOMAIN/go/console"}
+  {
+    "id": "claude-code-api-proxy",
+    "title": "Claude Code 中转配置",
+    "featured": true,
+    "tags": [
+      "docs-seo",
+      "technical-seo"
+    ],
+    "description": "面向 Claude Code 的 API Base URL、ANTHROPIC_AUTH_TOKEN、模型名与 /status 检查说明，适合国内开发环境快速接入。"
+  },
+  {
+    "id": "codex-api-config",
+    "title": "Codex API 配置指南",
+    "featured": true,
+    "tags": [
+      "docs-seo",
+      "technical-seo"
+    ],
+    "description": "整理 Codex / OpenAI 兼容客户端的 openai_base_url、model_provider、API Key 与最小测试请求。"
+  },
+  {
+    "id": "openai-compatible-api",
+    "title": "OpenAI 兼容接口说明",
+    "featured": true,
+    "tags": [
+      "technical-seo",
+      "templates"
+    ],
+    "description": "解释 OpenAI compatible API 的 base_url、/v1 路径、模型映射和 SDK 迁移注意事项。"
+  },
+  {
+    "id": "model-pricing-matrix",
+    "title": "模型与价格矩阵",
+    "featured": true,
+    "tags": [
+      "analytics",
+      "templates"
+    ],
+    "description": "用于展示 Claude、GPT、Gemini、DeepSeek 等模型的支持状态、价格倍率、上下文和使用建议。"
+  },
+  {
+    "id": "gateway-status-panel",
+    "title": "线路状态面板",
+    "tags": [
+      "transfer-tracking",
+      "analytics"
+    ],
+    "description": "区分 API 网关、模型上游、备用线路和维护公告，帮助用户判断是配置问题还是服务波动。"
+  },
+  {
+    "id": "troubleshooting-401-invalid-key",
+    "title": "401 Invalid Key 排查",
+    "tags": [
+      "docs-seo",
+      "technical-seo"
+    ],
+    "description": "检查 API Key、Bearer Token、环境变量刷新、客户端旧配置和账户页面 Key 状态。"
+  },
+  {
+    "id": "troubleshooting-model-not-found",
+    "title": "Model Not Found 排查",
+    "tags": [
+      "docs-seo",
+      "technical-seo"
+    ],
+    "description": "定位模型名拼写、模型映射、客户端 provider 选择和套餐权限问题。"
+  },
+  {
+    "id": "troubleshooting-rate-limit",
+    "title": "429 限流与余额排查",
+    "tags": [
+      "docs-seo",
+      "analytics"
+    ],
+    "description": "解释并发、速率限制、余额不足、套餐限制和上游限流的区别，并给出降级建议。"
+  },
+  {
+    "id": "cursor-api-config",
+    "title": "Cursor API 配置入口",
+    "tags": [
+      "docs-seo",
+      "productivity"
+    ],
+    "description": "面向 Cursor、自定义模型和 OpenAI 兼容配置的接入说明入口。"
+  },
+  {
+    "id": "cline-roo-code-config",
+    "title": "Cline / Roo Code 配置入口",
+    "tags": [
+      "docs-seo",
+      "productivity"
+    ],
+    "description": "整理 Cline、Roo Code 等 AI 编程工具的 API Base URL、模型和 Key 配置注意事项。"
+  },
+  {
+    "id": "api-key-safety-checklist",
+    "title": "API Key 安全清单",
+    "tags": [
+      "technical-seo",
+      "templates"
+    ],
+    "description": "购买和使用前确认 Key 分组、预算上限、日志策略、敏感信息保护和团队权限。"
+  },
+  {
+    "id": "go-click-analytics",
+    "title": "服务入口说明",
+    "tags": [
+      "transfer-tracking",
+      "analytics"
+    ],
+    "description": "说明官网入口、客户端配置入口与支持渠道的使用边界，帮助用户安全完成配置。"
+  }
 ]

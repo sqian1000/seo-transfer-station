@@ -22,46 +22,50 @@ const noindex = frontmatter?.noindex || slug === 'novel-tools';
   {
     sidebar ? (
       <SidebarShell showSidebar={false}>
-        <div class="max-w-2xl w-full mx-auto py-20">
+        <div class="mx-auto w-full max-w-4xl px-5 py-16 sm:px-6 lg:px-8">
           {pageHeader == "title" && (
             <TitleHeader
               title={title}
               description={description}
               link={link ? `/go/${slug}/` : undefined}
-              linkText={link ? "访问工具" : linkText}
+              linkText={link ? "查看详情" : linkText}
               image={frontmatter.image}
             />
           )}
-          <AppProse>
-            <slot />
-          </AppProse>
+          <section class="rounded-[1.5rem] border border-cyan-300/15 bg-slate-950/70 p-6 text-slate-200 shadow-2xl shadow-black/25 backdrop-blur sm:p-8">
+            <AppProse>
+              <slot />
+            </AppProse>
+          </section>
         </div>
       </SidebarShell>
     ) : (
       <AppShell>
-        <div class="max-w-2xl w-full mx-auto py-20">
+        <div class="mx-auto w-full max-w-4xl px-5 py-16 sm:px-6 lg:px-8">
           {pageHeader == "title" && (
-            <div class="mb-10">
+            <div class="mb-10 rounded-[1.5rem] border border-cyan-300/15 bg-slate-950/70 p-6 shadow-2xl shadow-black/25 backdrop-blur sm:p-8">
               <div class="flex justify-between items-center">
-                <h1 class="font-bold text-4xl text-gray-900 dark:text-gray-50">
+                <h1 class="font-bold text-4xl text-white">
                   {title}
                 </h1>
                 {link && (
                   <a
-                    class="inline-flex items-center gap-1 font-medium text-gray-800 dark:text-gray-100"
+                    class="inline-flex items-center gap-1 font-medium text-cyan-100 hover:text-white"
                     href={`/go/${slug}/`}
                   >
-                    访问工具
+                    查看详情
                     <span aria-hidden="true">↗</span>
                   </a>
                 )}
               </div>
-              <p class="text-gray-400 mt-2.5">{description}</p>
+              <p class="text-slate-300 mt-2.5">{description}</p>
             </div>
           )}
-          <AppProse>
-            <slot />
-          </AppProse>
+          <section class="rounded-[1.5rem] border border-cyan-300/15 bg-slate-950/70 p-6 text-slate-200 shadow-2xl shadow-black/25 backdrop-blur sm:p-8">
+            <AppProse>
+              <slot />
+            </AppProse>
+          </section>
         </div>
       </AppShell>
     )

@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /go/
 
-Sitemap: https://YOUR_API_DOMAIN/sitemap-index.xml
+Sitemap: https://www.531288.xyz/sitemap-index.xml

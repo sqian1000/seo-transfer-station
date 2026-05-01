@@ -1,24 +1,27 @@
 ---
-title: /go/ 点击追踪方案
-description: /go/ 中转页点击追踪方案：外部控制台、客服、社群、下载入口统一 noindex，不抢占 SEO 主内容页。
+title: 服务入口说明
+description: AI API 中转站服务入口说明：官网、配置文档、支持渠道和安全访问建议。
+noindex: true
 tags:
   - transfer-tracking
   - analytics
 ---
 
-# /go/ 点击追踪方案
+# 服务入口说明
 
-`/go/` 只用于外部资源中转与点击意图统计，不应作为可收录内容页。SEO 主内容应放在首页和专题页。
+用户访问、配置和排查问题时，建议优先从官网首页进入，避免使用来源不明的链接。
 
-## P0 规则
+## 推荐入口
 
-1. `/go/` 页面必须 `noindex,nofollow`。
-2. `/go/` 不进入 sitemap。
-3. 外链使用 `rel="nofollow noopener noreferrer"`。
-4. 不做 0 秒自动跳转，避免形成 doorway 页面。
+- 官网首页：[https://www.531288.xyz](https://www.531288.xyz)
+- 配置文档：从首页的 Claude Code、Codex、OpenAI 兼容 API 专题进入。
+- 错误排查：从首页的常见问题和专题页进入。
 
-## 待接入入口
+## 安全建议
 
-真实控制台、价格页、社群和客服链接需要业务侧确认后再接入。
+1. 不要把 API Key 发到公开聊天、论坛、Issue、截图或代码仓库。
+2. 配置客户端时，确认 Base URL 为 `https://www.531288.xyz`。
+3. 遇到 401、429、连接失败等问题，先按本站排查文档处理，再联系支持。
+4. 不要相信要求提供完整 API Key、账号密码或远程控制电脑的陌生链接。
 
 [回到首页](/)
