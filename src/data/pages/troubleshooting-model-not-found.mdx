@@ -1,0 +1,27 @@
+---
+title: Model Not Found 排查
+description: AI API 中转站 model not found 排查：模型名拼写、模型映射、套餐权限、provider、OpenAI 兼容路径和 Claude Code 配置。
+tags:
+  - docs-seo
+  - technical-seo
+---
+
+# Model Not Found 排查
+
+`model not found` 常见于模型名、provider、路径或权限不匹配。不要猜测模型名，应以控制台展示的 model id 为准。
+
+## 常见原因
+
+1. 客户端配置的模型名不存在或拼写错误。
+2. Claude Code、Codex、OpenAI SDK 使用了不同 provider 映射。
+3. 当前套餐没有目标模型权限。
+4. `base_url` 路径缺少 `/v1` 或使用了错误兼容入口。
+5. 上游模型临时维护或已下线。
+
+## 下一步
+
+- 先改用控制台推荐模型做短请求。
+- 检查 API Key 所属项目和模型权限。
+- 若仍失败，记录请求时间、model id、错误码，再联系服务方。
+
+[回到首页](/)

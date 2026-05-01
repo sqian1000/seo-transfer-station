@@ -1,0 +1,49 @@
+---
+import config from "@util/themeConfig";
+import BulletCard from "./BulletCard.astro";
+import RectangleCard from "./RectangleCard.astro";
+import SmallHorizontalCard from "./SmallHorizontalCard.astro";
+
+const { item } = Astro.props;
+
+const myItem = {
+  ...item,
+  ...item.data,
+};
+
+const href = config.directoryData?.source?.linksOutbound
+  ? myItem.link
+  : `/${myItem.id}`;
+const goHref = myItem.link ? `/go/${myItem.id}/` : href;
+
+const type = config.directoryUI.grid.type;
+---
+
+<div
+  class="listing"
+  transition:name={`${myItem.id}-card`}
+  data-tags={myItem.tags?.join(",") || ""}
+>
+  {type == "icon-list" && <BulletCard myItem={myItem} href={href} />}
+  {
+    type == "rectangle-card-grid" && (
+      <RectangleCard myItem={myItem} href={href} />
+    )
+  }
+  {
+    type == "small-card-grid" && (
+      <SmallHorizontalCard myItem={myItem} href={href} />
+    )
+  }
+  {
+    myItem.link && (
+      <a
+        class="mt-3 inline-flex text-sm font-semibold text-emerald-700 hover:text-emerald-900 dark:text-emerald-300 dark:hover:text-emerald-100"
+        href={goHref}
+        aria-label={`通过中转页访问 ${myItem.title}`}
+      >
+        访问工具 →
+      </a>
+    )
+  }
+</div>

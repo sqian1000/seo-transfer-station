@@ -1,0 +1,189 @@
+# AI API Transfer Gateway config
+# available directory themes: spearmint, peppermint, hemingway, brookmint
+theme = 'brookmint'
+
+[general]
+title = "AI API 中转站"
+logo = "/favicon.svg"
+iconLogo = "tabler:route"
+
+[general.seo]
+name = "AI API 中转站"
+description = "面向 Claude Code、Codex 和 OpenAI 兼容客户端的 AI API 中转站使用说明：购买前须知、Base URL 配置、错误排查、模型与价格说明。"
+url = "https://YOUR_API_DOMAIN"
+
+[directoryData.source]
+name = "json"
+linksOutbound = false
+
+[directoryData.tagPages]
+title = "{0} 资源"
+
+[directoryData.search]
+placeholder = "搜索 Claude Code、Codex、OpenAI 兼容配置"
+
+[[directoryData.tags]]
+key = "seo-tools"
+name = "SEO 工具"
+color = "blue"
+emoji = "🔎"
+description = "关键词、标题、描述、内链和内容站运营相关工具。"
+
+[[directoryData.tags]]
+key = "transfer-tracking"
+name = "中转追踪"
+color = "cyan"
+emoji = "🛰️"
+description = "跳转中转、点击统计、UTM 和转化路径分析。"
+
+[[directoryData.tags]]
+key = "docs-seo"
+name = "文档 SEO"
+color = "indigo"
+emoji = "📘"
+description = "使用文档、快速开始、FAQ、排错指南和教程型落地页。"
+
+[[directoryData.tags]]
+key = "programmatic-seo"
+name = "批量页面"
+color = "purple"
+emoji = "🧬"
+description = "模板化、数据驱动和长尾关键词页面生成。"
+
+[[directoryData.tags]]
+key = "technical-seo"
+name = "技术 SEO"
+color = "green"
+emoji = "⚙️"
+description = "robots、sitemap、canonical、结构化数据、速度优化等检查项。"
+
+[[directoryData.tags]]
+key = "content-ops"
+name = "内容运营"
+color = "amber"
+emoji = "🧭"
+description = "选题、文案、FAQ、竞品分析和内容更新节奏。"
+
+[[directoryData.tags]]
+key = "analytics"
+name = "数据分析"
+color = "lime"
+emoji = "📈"
+description = "点击、渠道、转化、页面表现和后续自研优先级判断。"
+
+[[directoryData.tags]]
+key = "templates"
+name = "模板清单"
+color = "gray"
+emoji = "📋"
+description = "可复制复用的 SEO 表格、检查清单和运营模板。"
+
+[[directoryData.tags]]
+key = "ai-writing"
+name = "AI 文案"
+color = "rose"
+emoji = "🤖"
+description = "用于生成标题、描述、FAQ、落地页文案和提示词。"
+
+[[directoryData.tags]]
+key = "productivity"
+name = "效率工具"
+color = "lime"
+emoji = "⚡"
+description = "提升站点维护、内容整理和发布效率的辅助工具。"
+
+[[directoryData.tags]]
+key = "future-lab"
+name = "后续专题"
+color = "gray"
+emoji = "🧪"
+description = "暂未进入首页主线的客户端、模型和运营实验专题。"
+
+[header.banner]
+show = true
+text = "AI API 中转站使用说明：Claude Code / Codex / OpenAI 兼容客户端配置、购买前须知与错误排查。"
+link = "https://YOUR_API_DOMAIN/#quickstart"
+brandText = "AI API Gateway"
+
+[header.navbar]
+colorModeSelector = true
+
+[[header.navbar.links]]
+name = "首页"
+href = "/"
+
+[[header.navbar.links]]
+name = "快速配置"
+href = "/#quickstart"
+
+[[header.navbar.links]]
+name = "价格模型"
+href = "/#pricing"
+
+[[header.navbar.links]]
+name = "错误排查"
+href = "/#troubleshooting"
+
+[[header.navbar.links]]
+name = "团队接入"
+href = "/#production"
+
+[header.actionButton]
+text = "获取 API Key"
+href = "https://YOUR_API_DOMAIN/go/console"
+
+[footer]
+description = "AI API 中转站：帮助开发者配置 Claude Code、Codex 与 OpenAI 兼容客户端，提供购买前须知、模型说明、错误排查和 /go/ 中转追踪。"
+
+[footer.socials.x]
+link = "https://YOUR_API_DOMAIN/go/social"
+
+[layout]
+sidebar = true
+emoji = true
+
+[listings]
+pageHeader = 'title'
+
+[directoryUI.search]
+placeholder = "搜索 Claude Code、Codex、OpenAI 兼容配置"
+showCount = true
+icon = "tabler:search"
+
+[directoryUI.search.tags]
+display = "show-all"
+intersection = false
+
+[directoryUI.grid]
+list = false
+type = "small-card-grid"
+
+[directoryUI.grid.emptyState]
+text = "暂时没有匹配的 API 配置入口。"
+type = "button"
+icon = "tabler:exclamation-mark"
+
+[directoryUI.grid.card]
+image = true
+
+[directoryUI.grid.submit]
+show = false
+first = false
+title = "提交配置入口"
+description = "提交新的客户端或模型配置说明。"
+hideable = true
+
+[directoryUI.featured]
+showOnAllPages = true
+showOnSide = true
+icon = "tabler:star"
+labelForCard = "推荐"
+
+[ui.icons]
+dark = "tabler:moon"
+light = "tabler:sun"
+youtube = "tabler:brand-youtube"
+x = "tabler:brand-twitter"
+instagram = "tabler:brand-instagram"
+facebook = "tabler:brand-facebook"
+github = "tabler:brand-github"

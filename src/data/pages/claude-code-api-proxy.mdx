@@ -1,0 +1,40 @@
+---
+title: Claude Code 中转站配置教程
+description: Claude Code 中转站配置说明：ANTHROPIC_BASE_URL、ANTHROPIC_AUTH_TOKEN、模型名、API Key 与 /status 检查，保留 YOUR_API_DOMAIN 安全占位。
+tags:
+  - docs-seo
+  - technical-seo
+---
+
+# Claude Code 中转站配置教程
+
+本页用于承接“Claude Code 中转站”“Claude Code API 配置”“Claude Code Base URL”等搜索意图。上线前不要填写未确认的真实域名或价格，示例统一保留 `YOUR_API_DOMAIN`。
+
+## 最短配置
+
+```bash
+export ANTHROPIC_BASE_URL="https://YOUR_API_DOMAIN/anthropic"
+export ANTHROPIC_AUTH_TOKEN="sk-your-api-key"
+export ANTHROPIC_MODEL="控制台显示的模型名"
+claude /status
+```
+
+## 购买或配置前先确认
+
+1. 控制台是否明确支持 Claude Code 或 Anthropic compatible API。
+2. `ANTHROPIC_BASE_URL` 是否由业务侧确认，不能把示例域名当真实入口。
+3. API Key 是否有目标模型权限、余额和速率限制。
+4. 模型名必须以控制台展示为准，不要猜测上游 model id。
+
+## 常见错误
+
+- `401 invalid key`：检查 Key 是否复制完整、终端是否重新加载环境变量。
+- `404 model not found`：检查模型名映射和套餐权限。
+- `429 rate limit`：降低并发，确认余额、RPM/TPM 和上游限流。
+- Claude Code 仍走官方：执行 `/status`，检查旧登录态或旧环境变量。
+
+## 相关页面
+
+- [回到 AI API 中转站首页](/)
+- [查看 Codex API 配置](/codex-api-config)
+- [查看 API Key 安全清单](/api-key-safety-checklist)

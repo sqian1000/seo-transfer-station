@@ -1,0 +1,25 @@
+---
+title: 401 Invalid Key 排查
+description: AI API 中转站 401 invalid key 排查：API Key、Bearer Token、环境变量、Claude Code、Codex 和 OpenAI 兼容客户端检查。
+tags:
+  - docs-seo
+  - technical-seo
+---
+
+# 401 Invalid Key 排查
+
+`401 invalid key` 通常是认证信息没有被正确读取，或当前 Key 不属于目标项目/线路。
+
+## 快速检查
+
+1. 重新复制 API Key，确认没有空格、换行或隐藏字符。
+2. Claude Code 检查 `ANTHROPIC_AUTH_TOKEN`，OpenAI 兼容客户端检查 `OPENAI_API_KEY`。
+3. 关闭并重新打开终端，确认环境变量生效。
+4. 检查 Key 是否被禁用、过期或超出项目权限。
+5. 区分 Bearer Token、x-api-key 与客户端自定义字段。
+
+## 安全提醒
+
+不要把真实 API Key 写入公开仓库、截图、日志或工单正文。排查时只提供 Key 前后少量掩码字符。
+
+[回到首页](/)

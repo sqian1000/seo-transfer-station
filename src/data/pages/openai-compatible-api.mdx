@@ -1,0 +1,33 @@
+---
+title: OpenAI 兼容 API Base URL 总指南
+description: OpenAI 兼容 API 的 Base URL、/v1 路径、SDK 迁移、Cursor、Cline、Codex 等客户端配置规则与排错清单。
+tags:
+  - technical-seo
+  - templates
+---
+
+# OpenAI 兼容 API Base URL 总指南
+
+OpenAI compatible API 的核心是让客户端把请求发到自定义 `base_url`，并继续使用 Bearer Token、model 字段和 `/v1/chat/completions` 等兼容路径。
+
+## 通用字段
+
+| 字段 | 说明 |
+|---|---|
+| `base_url` / `openai_base_url` | 示例：`https://YOUR_API_DOMAIN/v1` |
+| `OPENAI_API_KEY` | 控制台生成的 API Key |
+| `model` | 以控制台展示为准，不猜测真实模型名 |
+| timeout / retry | 生产环境应设置超时、重试和降级策略 |
+
+## 排错优先级
+
+1. 401：Key 或 Header 格式。
+2. 404：模型名、路径或 provider 配置。
+3. 429：并发、余额、速率限制或上游限流。
+4. timeout：本地网络、线路波动或客户端超时过短。
+
+## 相关页面
+
+- [回到首页](/)
+- [Codex API 配置](/codex-api-config)
+- [模型与价格矩阵](/model-pricing-matrix)

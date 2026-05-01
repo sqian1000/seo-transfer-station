@@ -1,0 +1,36 @@
+---
+title: Codex API 配置指南
+description: Codex API 配置指南：OpenAI 兼容 API、openai_base_url、model_provider、API Key 和最小测试请求，使用 YOUR_API_DOMAIN 占位。
+tags:
+  - docs-seo
+  - technical-seo
+---
+
+# Codex API 配置指南
+
+Codex 和多数 OpenAI 兼容客户端通常需要三类信息：`openai_base_url`、API Key、模型名。真实域名和模型列表未确认前，示例只使用 `YOUR_API_DOMAIN`。
+
+## 配置示例
+
+```toml
+# ~/.codex/config.toml
+model = "控制台显示的 OpenAI compatible model id"
+openai_base_url = "https://YOUR_API_DOMAIN/v1"
+```
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+## 最小测试路径
+
+1. 先使用短 prompt，避免长上下文导致误判。
+2. 确认 `base_url` 包含正确协议和 `/v1` 路径。
+3. 检查 API Key 是否属于当前项目或团队分组。
+4. 如果出现 `model not found`，优先改为控制台展示的 model id。
+
+## 相关页面
+
+- [回到 AI API 中转站首页](/)
+- [查看 Claude Code 配置](/claude-code-api-proxy)
+- [查看 429 限流排查](/troubleshooting-rate-limit)

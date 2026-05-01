@@ -1,0 +1,52 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "@layouts/BaseLayout.astro";
+
+const { slug } = Astro.params;
+const { listing } = Astro.props;
+const title = listing?.data?.title || "未知工具";
+const description = listing?.data?.description || "工具中转页";
+const targetUrl = listing?.data?.link;
+
+export async function getStaticPaths() {
+  const listings = await getCollection("directory");
+  return listings
+    .filter((entry) => Boolean(entry.data.link))
+    .map((entry) => ({
+      params: { slug: entry.id },
+      props: { listing: entry },
+    }));
+}
+---
+
+<BaseLayout title={`访问 ${title} | AI API 中转站导航`} description={`即将跳转到 ${title}。`} slug={`go/${slug}`} noindex={true}>
+  <main class="min-h-screen bg-[#050816] px-6 py-16 text-slate-100">
+    <section class="mx-auto max-w-2xl rounded-3xl border border-cyan-300/20 bg-white/[.055] p-8 text-center shadow-2xl shadow-cyan-950/30 backdrop-blur-xl">
+      <p class="text-sm font-semibold text-cyan-300">外部资源中转</p>
+      <h1 class="mt-3 text-3xl font-bold text-white">正在前往：{title}</h1>
+      <p class="mt-4 text-slate-300">{description}</p>
+      <p class="mt-4 text-sm text-slate-400">此页面 noindex，仅用于外部资源跳转与点击意图统计；搜索收录请回到 AI API 中转站使用说明首页。</p>
+      <div class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <a class="inline-flex rounded-full bg-cyan-300 px-5 py-3 font-semibold text-slate-950 no-underline" href={targetUrl} rel="nofollow noopener noreferrer" target="_blank" data-tool={slug}>访问资源</a>
+        <a class="inline-flex rounded-full border border-white/15 px-5 py-3 font-semibold text-slate-200 no-underline" href={`/${slug}`}>查看详情</a>
+      </div>
+      <noscript>
+        <p class="mt-6 text-sm text-slate-500">如果没有自动跳转，请点击“访问资源”。</p>
+      </noscript>
+    </section>
+  </main>
+  <script define:vars={{ targetUrl, slug }}>
+    try {
+      const payload = {
+        tool: slug,
+        source: document.referrer || "direct",
+        path: location.pathname,
+        ts: new Date().toISOString(),
+      };
+      window.dispatchEvent(new CustomEvent("seo-transfer-click", { detail: payload }));
+      console.info("seo-transfer-click", payload);
+    } catch (error) {
+      console.warn("click tracking fallback", error);
+    }
+  </script>
+</BaseLayout>

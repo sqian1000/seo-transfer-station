@@ -1,0 +1,16 @@
+---
+import AppShell from "@components/app/AppShell.astro";
+import Prose from "../components/app/Prose.astro";
+import BaseLayout from "./BaseLayout.astro";
+import themeConfig from "@util/themeConfig";
+---
+
+<BaseLayout title={themeConfig.general.seo.name} description={themeConfig.general.seo.description}>
+  <AppShell>
+    <div class="mx-auto max-w-7xl px-5 py-10 md:py-14">
+      <Prose>
+        <slot />
+      </Prose>
+    </div>
+  </AppShell>
+</BaseLayout>

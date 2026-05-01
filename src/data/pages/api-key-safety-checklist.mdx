@@ -1,0 +1,31 @@
+---
+title: API Key 安全清单
+description: AI API 中转站购买与团队接入前的 Key 分组、预算上限、日志策略、敏感数据、安全和权限检查清单。
+tags:
+  - technical-seo
+  - templates
+---
+
+# API Key 安全清单
+
+无论使用 Claude Code、Codex 还是 OpenAI 兼容 API，API Key 都应按项目、环境和成员拆分，避免把高权限密钥散落在多个客户端。
+
+## 上线前检查
+
+1. 个人测试 Key 与生产 Key 分离。
+2. 每个 Key 设置日预算、月预算或速率限制。
+3. CI、服务器和本地开发机使用不同 Key。
+4. 日志只保留必要计费与错误信息，避免记录敏感 prompt。
+5. 离职、外包结束或泄露风险出现时立即轮换 Key。
+
+## 团队接入建议
+
+- 为 Claude Code、Codex、Cursor、Cline 等客户端单独分组。
+- 定期查看请求统计、余额和异常错误码。
+- 高峰期准备备用模型或线路，但不做绝对可用承诺。
+
+## 相关页面
+
+- [回到首页](/)
+- [Claude Code 配置](/claude-code-api-proxy)
+- [OpenAI 兼容 API](/openai-compatible-api)
