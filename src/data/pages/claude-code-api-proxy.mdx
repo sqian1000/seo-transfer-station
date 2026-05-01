@@ -1,40 +1,119 @@
 ---
-title: Claude Code 中转站配置教程
-description: Claude Code 中转站配置说明：ANTHROPIC_BASE_URL、ANTHROPIC_AUTH_TOKEN、模型名、API Key 与 /status 检查，保留 YOUR_API_DOMAIN 安全占位。
+title: Claude Code 中转站手动配置教程
+description: Claude Code 中转站手动配置说明：settings.json 路径、ANTHROPIC_API_KEY、ANTHROPIC_BASE_URL、压缩阈值、验证步骤与常见错误排查。
 tags:
   - docs-seo
   - technical-seo
 ---
 
-# Claude Code 中转站配置教程
+# Claude Code 中转站手动配置教程
 
-本页用于承接“Claude Code 中转站”“Claude Code API 配置”“Claude Code Base URL”等搜索意图。上线前不要填写未确认的真实域名或价格，示例统一保留 `YOUR_API_DOMAIN`。
+当自动安装或 ccswitch 导入不可用时，再使用手动配置。手动配置的核心是修改 Claude Code 的 `settings.json`，把 API Key 和 Base URL 写到 `env` 里。
 
-## 最短配置
+> 先备份，再修改。文件里已有内容时，不要整文件清空，只把需要的字段合并进去。
 
-```bash
-export ANTHROPIC_BASE_URL="https://YOUR_API_DOMAIN/anthropic"
-export ANTHROPIC_AUTH_TOKEN="sk-your-api-key"
-export ANTHROPIC_MODEL="控制台显示的模型名"
-claude /status
+## 适合谁看
+
+- ccswitch 保存了，但 Claude Code 不生效。
+- 想确认 Claude Code 到底读取了哪个 Key 和 Base URL。
+- 需要手动调整上下文压缩阈值。
+
+## 你需要准备
+
+| 信息 | 从哪里拿 | 示例 |
+|---|---|---|
+| API Key | 中转站后台 | `sk-xxxxxxxxxxxxxxxx` |
+| Base URL | 后台或线路表 | `https://YOUR_API_DOMAIN` |
+| 压缩阈值 | 自行决定 | `78` 或 `80` |
+
+本文不写死具体中转地址。真实地址以后台复制结果为准。
+
+## 找到 settings.json
+
+### Windows
+
+```text
+%USERPROFILE%\.claude\settings.json
 ```
 
-## 购买或配置前先确认
+可以按 `Win + R`，输入 `%USERPROFILE%\.claude` 后回车。
 
-1. 控制台是否明确支持 Claude Code 或 Anthropic compatible API。
-2. `ANTHROPIC_BASE_URL` 是否由业务侧确认，不能把示例域名当真实入口。
-3. API Key 是否有目标模型权限、余额和速率限制。
-4. 模型名必须以控制台展示为准，不要猜测上游 model id。
+### macOS / Linux
 
-## 常见错误
+```text
+~/.claude/settings.json
+```
 
-- `401 invalid key`：检查 Key 是否复制完整、终端是否重新加载环境变量。
-- `404 model not found`：检查模型名映射和套餐权限。
-- `429 rate limit`：降低并发，确认余额、RPM/TPM 和上游限流。
-- Claude Code 仍走官方：执行 `/status`，检查旧登录态或旧环境变量。
+Finder 可按 `Cmd + Shift + G`，输入 `~/.claude`。
+
+如果没有 `.claude` 文件夹，可以先启动一次 Claude Code，或者手动创建文件夹和 `settings.json`。
+
+## 写入配置
+
+如果 `settings.json` 是空文件或不存在，可以写成：
+
+```json
+{
+  "env": {
+    "ANTHROPIC_API_KEY": "sk-xxxxxxxxxxxxxxxx",
+    "ANTHROPIC_BASE_URL": "https://YOUR_API_DOMAIN",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "78"
+  }
+}
+```
+
+如果文件里已有其他配置，只合并 `env` 字段：
+
+```json
+{
+  "env": {
+    "已有配置": "保留",
+    "ANTHROPIC_API_KEY": "sk-xxxxxxxxxxxxxxxx",
+    "ANTHROPIC_BASE_URL": "https://YOUR_API_DOMAIN",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "78"
+  }
+}
+```
+
+## 保存并验证
+
+1. 保存 `settings.json`。
+2. 完全关闭 Claude Code 和当前终端。
+3. 重新打开终端。
+4. 执行 `claude`。
+5. 发送测试消息：
+
+```text
+请回复“配置已生效”。
+```
+
+能收到回复就完成。如果提示认证失败，优先检查 Key；如果提示连接失败，优先检查 Base URL 和线路。
+
+## 排错清单
+
+| 现象 | 可能原因 | 处理方式 |
+|---|---|---|
+| Unauthorized / 认证失败 | Key 错了或多了空格 | 重新复制 API Key |
+| Connection Error / 连接失败 | Base URL 错或线路不可用 | 换线路，URL 末尾不要乱加 `/` |
+| 保存后没变化 | 改错文件 | 确认路径是 `.claude/settings.json` |
+| 设置不生效 | 旧进程还在 | 完全退出 Claude Code 和终端 |
+| JSON 报错 | 少逗号或多逗号 | 用 JSON 校验工具检查格式 |
+
+## 和上下文压缩的关系
+
+`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` 用来调整自动压缩触发阈值。推荐值 `78` 或 `80`，表示上下文占用到约 78%/80% 时提前压缩，避免撑到极限才处理。
+
+压缩后可能出现：
+
+- 早期细节变模糊。
+- 缓存重新建立。
+- 下一次请求费用变化。
+- 需要重新补充关键背景。
+
+长期项目规则建议写进 `CLAUDE.md`，不要只放在聊天里。
 
 ## 相关页面
 
 - [回到 AI API 中转站首页](/)
-- [查看 Codex API 配置](/codex-api-config)
-- [查看 API Key 安全清单](/api-key-safety-checklist)
+- [Codex 手动配置](/codex-api-config)
+- [API Key 安全清单](/api-key-safety-checklist)

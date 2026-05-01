@@ -1,36 +1,115 @@
 ---
-title: Codex API 配置指南
-description: Codex API 配置指南：OpenAI 兼容 API、openai_base_url、model_provider、API Key 和最小测试请求，使用 YOUR_API_DOMAIN 占位。
+title: Codex API 手动配置指南
+description: Codex API 中转站手动配置指南：config.toml、auth.json、model_provider、base_url、OPENAI_API_KEY、验证步骤与排错清单。
 tags:
   - docs-seo
   - technical-seo
 ---
 
-# Codex API 配置指南
+# Codex API 手动配置指南
 
-Codex 和多数 OpenAI 兼容客户端通常需要三类信息：`openai_base_url`、API Key、模型名。真实域名和模型列表未确认前，示例只使用 `YOUR_API_DOMAIN`。
+当自动安装或 ccswitch 导入不可用时，再手动配置 Codex。Codex 通常需要改两个文件：`config.toml` 写 Base URL 和模型提供商，`auth.json` 写 API Key。
 
-## 配置示例
+> 不要把 API Key 写进公开项目。Key 只放在你自己的用户目录，不能提交到 GitHub、README、截图或聊天记录。
+
+## 适合谁看
+
+- ccswitch 配置 Codex 后仍然走默认线路。
+- 想检查 Codex 的 `config.toml` 和 `auth.json`。
+- 需要手动切换模型提供商或 Base URL。
+
+## 你需要准备
+
+| 信息 | 从哪里拿 | 示例 |
+|---|---|---|
+| API Key | 中转站后台 | `sk-xxxxxxxxxxxxxxxx` |
+| Base URL | 后台或线路表 | `https://YOUR_API_DOMAIN` |
+| 模型名 | 后台模型列表 | `gpt-5.4` |
+
+真实 Base URL 以后台为准，SEO 页面不写死具体线路地址。
+
+## 找到 Codex 配置目录
+
+### Windows
+
+```text
+%USERPROFILE%\.codex\config.toml
+%USERPROFILE%\.codex\auth.json
+```
+
+### macOS / Linux
+
+```text
+~/.codex/config.toml
+~/.codex/auth.json
+```
+
+如果目录不存在，可以先启动一次 Codex，或者手动创建。
+
+## 修改 config.toml
+
+打开 `config.toml`，写入或合并：
 
 ```toml
-# ~/.codex/config.toml
-model = "控制台显示的 OpenAI compatible model id"
-openai_base_url = "https://YOUR_API_DOMAIN/v1"
+model_provider = "custom"
+model = "gpt-5.4"
+
+[model_providers.custom]
+name = "custom"
+base_url = "https://YOUR_API_DOMAIN"
+wire_api = "responses"
+requires_openai_auth = true
 ```
+
+如果已经有其他 Codex 配置，不要清空整文件，只确认 `model_provider`、`model` 和 `[model_providers.custom]` 这几项符合目标线路。
+
+## 修改 auth.json
+
+打开同目录下的 `auth.json`，写入你的 API Key：
+
+```json
+{
+  "OPENAI_API_KEY": "sk-xxxxxxxxxxxxxxxx"
+}
+```
+
+这里的 `OPENAI_API_KEY` 是 `auth.json` 里的字段名，不是让你把 Key 写进项目环境变量文件。
+
+## 保存并验证
+
+完全关闭 Codex 和终端后重新打开，执行：
 
 ```bash
-export OPENAI_API_KEY="sk-your-api-key"
+codex login status
 ```
 
-## 最小测试路径
+如果看到已经使用 API Key 登录，再执行：
 
-1. 先使用短 prompt，避免长上下文导致误判。
-2. 确认 `base_url` 包含正确协议和 `/v1` 路径。
-3. 检查 API Key 是否属于当前项目或团队分组。
-4. 如果出现 `model not found`，优先改为控制台展示的 model id。
+```bash
+codex
+```
+
+进入 Codex 后发送：
+
+```text
+请回复“配置已生效”。
+```
+
+能正常回复，就说明 Codex 已经接入中转站。
+
+## 排错清单
+
+| 现象 | 可能原因 | 处理方式 |
+|---|---|---|
+| 仍然走默认配置 | `config.toml` 路径写错或 `model_provider` 没指向 custom | 确认文件在用户目录 `.codex` 下 |
+| 鉴权失败 / 401 | `auth.json` 路径写错或 Key 错 | 重新从后台复制 API Key |
+| 连接失败 | Base URL 错或线路不可用 | 换线路，确认 Base URL 完整 |
+| TOML 报错 | `config.toml` 格式不合法 | 检查引号、空行和表头 |
+| JSON 报错 | `auth.json` 格式不合法 | 检查双引号、逗号和花括号 |
+| 改完没反应 | 旧终端或旧 Codex 进程仍在 | 完全关闭后重新打开 |
 
 ## 相关页面
 
 - [回到 AI API 中转站首页](/)
-- [查看 Claude Code 配置](/claude-code-api-proxy)
-- [查看 429 限流排查](/troubleshooting-rate-limit)
+- [Claude Code 手动配置](/claude-code-api-proxy)
+- [429 与余额排查](/troubleshooting-rate-limit)

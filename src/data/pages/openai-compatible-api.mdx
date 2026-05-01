@@ -1,6 +1,6 @@
 ---
 title: OpenAI 兼容 API Base URL 总指南
-description: OpenAI 兼容 API 的 Base URL、/v1 路径、SDK 迁移、Cursor、Cline、Codex 等客户端配置规则与排错清单。
+description: OpenAI 兼容 API 中转站配置总指南：base_url、/v1 路径、Bearer Token、模型名、Cursor、Cline、Roo Code、Codex 和 SDK 迁移排查。
 tags:
   - technical-seo
   - templates
@@ -8,26 +8,62 @@ tags:
 
 # OpenAI 兼容 API Base URL 总指南
 
-OpenAI compatible API 的核心是让客户端把请求发到自定义 `base_url`，并继续使用 Bearer Token、model 字段和 `/v1/chat/completions` 等兼容路径。
+OpenAI compatible API 的核心，是让客户端把请求发到自定义 `base_url`，并继续使用 Bearer Token、`model` 字段和兼容协议。Codex、Cursor、Cline、Roo Code 和很多 SDK 都属于这一类接入场景。
 
 ## 通用字段
 
 | 字段 | 说明 |
 |---|---|
-| `base_url` / `openai_base_url` | 示例：`https://YOUR_API_DOMAIN/v1` |
+| `base_url` / `openai_base_url` | 示例：`https://YOUR_API_DOMAIN/v1` 或后台要求的兼容入口 |
 | `OPENAI_API_KEY` | 控制台生成的 API Key |
-| `model` | 以控制台展示为准，不猜测真实模型名 |
-| timeout / retry | 生产环境应设置超时、重试和降级策略 |
+| `model` | 以控制台展示为准，不猜测官方 model id |
+| `timeout` | 建议生产环境显式设置超时 |
+| `retry` | 对 429、5xx 设置有限次数的退避重试 |
+
+真实地址以后台复制结果为准；本文只保留 `YOUR_API_DOMAIN` 占位。
+
+## 最小 SDK 示例
+
+```ts
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseURL: "https://YOUR_API_DOMAIN/v1",
+});
+
+const res = await client.chat.completions.create({
+  model: "后台展示的模型名",
+  messages: [{ role: "user", content: "请回复配置已生效" }],
+});
+```
+
+## Cursor / Cline / Roo Code 通用检查
+
+1. Provider 选择 OpenAI compatible 或自定义兼容接口。
+2. Base URL 填后台给出的兼容入口。
+3. API Key 使用当前项目 Key，不复用高权限主 Key。
+4. Model 使用后台模型列表展示值。
+5. 出现 401、404、429 时，不要先重装客户端，先检查 Key、路径、模型名和余额。
 
 ## 排错优先级
 
-1. 401：Key 或 Header 格式。
-2. 404：模型名、路径或 provider 配置。
-3. 429：并发、余额、速率限制或上游限流。
-4. timeout：本地网络、线路波动或客户端超时过短。
+1. **401**：Key、Header、Bearer Token 或字段名。
+2. **404 / model not found**：模型名、provider、路径或权限。
+3. **429**：并发、余额、速率限制或上游限流。
+4. **timeout**：本地网络、线路波动、代理冲突或客户端超时过短。
+5. **配置无变化**：旧进程仍在，或客户端读取了另一个配置文件。
+
+## 生产环境建议
+
+- 不要让多个服务共用一个 Key。
+- 为自动化任务设置预算和速率限制。
+- 日志只记录必要的错误码、模型名、耗时和 token 用量，避免记录敏感 prompt。
+- 对长任务设置超时和最大重试次数，避免故障时无限消耗余额。
 
 ## 相关页面
 
 - [回到首页](/)
 - [Codex API 配置](/codex-api-config)
-- [模型与价格矩阵](/model-pricing-matrix)
+- [API Key 安全清单](/api-key-safety-checklist)
+- [Model Not Found 排查](/troubleshooting-model-not-found)

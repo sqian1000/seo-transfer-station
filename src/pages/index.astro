@@ -2,96 +2,69 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 
 const paths = [
-  { n: '01', title: '第一次使用', text: '购买前先看额度、倍率、线路、支持模型和工具边界，避免买完才发现客户端接不上。', href: '#before-start' },
-  { n: '02', title: '已有 API Key', text: '直接复制 Base URL、Key 和客户端配置，按 Claude Code / Codex / OpenAI SDK 三类走。', href: '#quickstart' },
-  { n: '03', title: '配置失败', text: '按 401、403、404 model not found、429、5xx、余额不足等错误码快速定位。', href: '#troubleshooting' },
-  { n: '04', title: '团队接入', text: '需要预算、速率限制、日志策略、Key 分组和备用线路时，从生产环境清单开始。', href: '#production' },
+  { n: '01', title: '第一次使用', text: '先确认余额/倍率/线路、API Key 和目标客户端，再选择自动导入或手动配置。', href: '#start' },
+  { n: '02', title: 'Claude Code', text: '安装 CLI，写入 settings.json 的 env，重启终端后用测试消息验证。', href: '#claude-code' },
+  { n: '03', title: 'Codex', text: 'config.toml 写模型和 provider，auth.json 写 API Key，避免把 Key 放进项目。', href: '#codex' },
+  { n: '04', title: '配置失败', text: '按 Key、线路、模型、进程重启、JSON/TOML 格式五类排查。', href: '#troubleshooting' },
 ];
 
-const gateways = [
-  ['Route', 'Claude Code → API Gateway → Model Provider'],
-  ['Auth', 'API Key valid · Project scoped'],
-  ['Billing', 'Balance check before request'],
-  ['Fallback', '备用线路按策略切换，避免夸大承诺'],
+const endpointRules = [
+  ['API Key', '从中转站后台复制，示例统一写成 sk-xxxxxxxx。不要写进公开仓库、截图、README 或聊天记录。'],
+  ['Base URL', '从后台或线路表复制。本文不搬运具体中转地址；实际使用时替换 YOUR_API_DOMAIN。'],
+  ['模型名', '以后台模型列表为准，不猜测官方 model id。Claude Code 和 Codex 的字段名不同。'],
+  ['验证方式', '配置后完全关闭工具和终端，重开后发送“请回复配置已生效”。'],
 ];
 
-const modelPlans = [
-  ['Claude 系列', '适合 Claude Code、代码问答、文档和重构场景', '模型名、上下文、价格/倍率待接入真实控制台'],
-  ['OpenAI 兼容模型', '适合 Codex、OpenAI SDK、Cursor、Cline 等兼容客户端', '统一 /v1 兼容格式，具体 model id 以控制台为准'],
-  ['Gemini / DeepSeek 等扩展模型', '用于低成本、长上下文或特定任务的备选路由', '上线前需确认支持列表和限流规则'],
-  ['团队套餐 / 专属线路', '适合预算、Key 分组、审计和备用线路需求', '状态页、SLA 与真实域名待业务侧确认'],
+const quickSteps = [
+  ['读购买需知', '先弄清额度、倍率、线路和要用的客户端。新用户建议小额测试，跑通后再追加。'],
+  ['准备环境', 'Claude Code / Codex 都依赖 Node.js 与 npm。先确认 node -v、npm -v 能正常输出。'],
+  ['导入或手动配置', '能用 ccswitch 就先导入；导入失败时再手动改 Claude Code 或 Codex 配置文件。'],
+  ['发送测试消息', '只发短消息验证 Key、Base URL、模型、余额和线路，不要一上来跑长任务。'],
 ];
 
-const ctas = [
-  ['获取 API Key', '#before-start', '未接入真实控制台前，先按购买前须知核对需求'],
-  ['查看价格', '#pricing', '价格、倍率和额度以控制台实时展示为准'],
-  ['配置失败', '#troubleshooting', '按错误码排查'],
+const claudeChecks = [
+  ['Windows 路径', '%USERPROFILE%\\.claude\\settings.json'],
+  ['macOS / Linux 路径', '~/.claude/settings.json'],
+  ['必填字段', 'ANTHROPIC_API_KEY、ANTHROPIC_BASE_URL'],
+  ['推荐字段', 'CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=78，用于提前触发压缩，适合长任务。'],
 ];
 
-const metrics = [
-  ['3 min', '最短跑通路径', '从复制 Key 到第一条测试消息'],
-  ['8 类', '高频故障前置', '认证、余额、模型、线路、客户端、代理、速率、上游'],
-  ['4 层', '信任信息', '价格倍率、余额账单、线路状态、请求统计'],
-];
-
-const features = [
-  ['统一中转入口', '把 Claude Code、Codex、OpenAI 兼容客户端统一接入同一套 API Base 与 Key 管理。'],
-  ['只改 Base URL', '大多数客户端只需要替换 API Base / Base URL，再填入 Key，就能走中转服务。'],
-  ['使用说明 SEO', '首页就是可收录的快速开始文档，覆盖购买、配置、测试、FAQ 等搜索意图。'],
-  ['状态分流向导', '第一次、已有 Key、配置失败、团队生产四条路，减少用户在文档里迷路。'],
-  ['状态与排错', '把 401、403、404 model not found、429、5xx、余额不足、模型不可用等问题前置说明。'],
-  ['安全与透明', '提醒 Key 保管、预算限制、日志策略和上游可用性变化，避免夸大承诺。'],
-];
-
-const steps = [
-  ['阅读购买需知', '确认额度、倍率、线路、支持工具和使用边界，避免买完才发现配置方式不匹配。'],
-  ['获取 API Key', '在控制台复制 Key，建议先用小额度测试，确认 Claude Code / Codex 能正常请求。'],
-  ['替换 Base URL', 'Claude Code 设置 ANTHROPIC_BASE_URL；Codex / OpenAI SDK 设置 openai_base_url 或 base_url。'],
-  ['发送测试消息', '用最小请求验证认证、余额、线路和模型映射是否正常。失败时进入排错矩阵。'],
-];
-
-const trustItems = [
-  ['透明计费', '展示模型价格、倍率、输入/输出 token、缓存与推理消耗，避免隐藏扣费。'],
-  ['余额与账单', '每次请求后可查看余额变化、消费明细、今日消耗和本月趋势。'],
-  ['线路状态', '区分 API 网关、上游模型和线路状态；异常时给出维护公告与备用建议。'],
-  ['请求统计', '按模型、Key、项目维度查看请求数、成功率、延迟、错误码和 token 消耗。'],
-  ['安全提示', '提醒不要泄露 API Key，不上传敏感数据，生产环境设置预算和速率限制。'],
-  ['合规措辞', '避免“绝对稳定、封禁风险归零”等绝对承诺，明确可用性会受上游和线路影响。'],
+const codexChecks = [
+  ['Windows 路径', '%USERPROFILE%\\.codex\\config.toml 与 %USERPROFILE%\\.codex\\auth.json'],
+  ['macOS / Linux 路径', '~/.codex/config.toml 与 ~/.codex/auth.json'],
+  ['config.toml', 'model_provider、model、[model_providers.custom]、base_url、wire_api。'],
+  ['auth.json', 'OPENAI_API_KEY 字段，只放在用户目录，不放进项目。'],
 ];
 
 const troubleshooting = [
-  ['401 / invalid key', 'Key 复制不完整、环境变量没刷新、客户端读了旧配置。先重新打开终端，再用最小 curl 验证。'],
-  ['403 / forbidden', '账号、模型或线路权限不足。检查套餐是否包含目标模型，必要时切换可用模型。'],
-  ['404 model not found', '客户端模型名与中转映射不一致。先用控制台支持列表里的原始 model id。'],
-  ['429 / rate limit', '并发过高、余额不足或上游限流。降低并发，查看今日额度和重试间隔。'],
-  ['5xx / timeout', '可能是上游波动、线路维护或本地代理干扰。先短请求复测，再看状态页和备用线路。'],
-  ['Claude Code 仍走官方', '检查是否残留官方登录态或旧环境变量。用 /status 确认当前 provider 和 base URL。'],
-];
-
-
-const topicLinks = [
-  ['Claude Code 中转站配置专题', '/claude-code-api-proxy', 'ANTHROPIC_BASE_URL、ANTHROPIC_AUTH_TOKEN、/status 检查与 model not found 排查。'],
-  ['Codex API 配置专题', '/codex-api-config', 'openai_base_url、model_provider、OPENAI_API_KEY 与最小测试请求。'],
-  ['OpenAI 兼容 API 总指南', '/openai-compatible-api', 'base_url、/v1 路径、SDK 迁移、Cursor / Cline 等客户端共用规则。'],
-  ['模型与价格矩阵', '/model-pricing-matrix', '价格倍率、余额、支持模型、上下文和“以控制台为准”的安全占位。'],
-  ['API Key 安全清单', '/api-key-safety-checklist', 'Key 分组、预算上限、日志策略、敏感数据和团队权限。'],
-  ['429 / 限流排查', '/troubleshooting-rate-limit', 'rate limit、余额不足、并发、上游限流和重试间隔。'],
-];
-
-const production = [
-  ['Key 分组', '按项目、成员、环境拆 Key，避免所有客户端共享同一个高权限密钥。'],
-  ['预算上限', '为个人测试、自动化任务、生产服务分别设置日限额和月限额。'],
-  ['日志策略', '默认只记录必要计费与错误信息，敏感业务内容不要进入长期日志。'],
-  ['备用线路', '为高峰期准备备用模型或线路，但不要承诺绝对可用。'],
+  ['401 / Unauthorized / invalid key', 'Key 错、复制多了空格、写错字段或客户端读了旧配置。重新从后台复制 Key，确认字段名，重启终端。'],
+  ['连接失败 / timeout', 'Base URL 错、线路不可用、本地代理冲突或网络阻断。换线路，确认 URL 没有多余路径或末尾斜杠问题。'],
+  ['model not found', '模型名拼写、provider 或套餐权限不匹配。只使用后台模型列表里展示的 model id。'],
+  ['429 / rate limit', '并发过高、余额不足、RPM/TPM 限制或上游限流。降低并发，短 prompt 复测，设置退避重试。'],
+  ['改完没变化', '旧终端或旧工具进程仍在，或者改错配置文件。完全退出 Claude Code / Codex 和终端后重开。'],
+  ['JSON / TOML 报错', 'settings.json、auth.json 或 config.toml 格式不合法。检查双引号、逗号、表头和缩进。'],
 ];
 
 const faq = [
-  ['这个页面是做什么的？', '这是 AI API 中转站的使用说明型 SEO 首页，用来承接“Claude Code 中转站、Codex API 配置、AI 编程 API 代理”等搜索需求。'],
-  ['Claude Code 需要怎么配置？', '常见方式是设置 ANTHROPIC_BASE_URL 与 ANTHROPIC_AUTH_TOKEN；如果想走官方订阅登录，应移除这些 API 环境变量并用 /status 检查。'],
-  ['Codex 应该填哪里？', 'Codex 可在 ~/.codex/config.toml 中配置 openai_base_url，或定义 model_provider，再通过环境变量提供 API Key。'],
-  ['配置失败先看什么？', '先确认 Key 是否完整、Base URL 是否带正确路径、模型名是否支持、余额是否足够、终端是否重新加载环境变量。'],
-  ['为什么还需要 /go/ 中转？', '外部下载、配置工具、社群、控制台入口都可以通过 /go/ 管理，便于后续统计点击和替换目标地址。'],
-  ['后续会扩展哪些页面？', '优先扩展 Claude Code 配置、Codex 配置、价格模型、线路状态和错误码专题页；其他实验功能暂不进入首页主线。'],
+  ['这个站应该承接哪些搜索？', '核心承接 Claude Code 中转站、Codex API 配置、OpenAI compatible base_url、API Key 配置、401/model not found/429 排查等搜索意图。'],
+  ['为什么不直接放真实中转地址？', '中转地址可能随线路、套餐、风控和维护调整。SEO 页面应保留 YOUR_API_DOMAIN 占位，真实地址从后台复制，避免页面过期或泄露私有入口。'],
+  ['Claude Code 应该用 ANTHROPIC_API_KEY 还是 ANTHROPIC_AUTH_TOKEN？', '不同版本和接入方式可能读取字段不同。通用文档优先写 settings.json 的 env，并提醒以客户端当前文档和后台导入结果为准；如果已有配置，不要清空整文件，只合并 env 字段。'],
+  ['Codex 的 Key 写在哪里？', '写在用户目录的 ~/.codex/auth.json 或 Windows 用户目录对应文件里，不要写入项目仓库。字段通常是 OPENAI_API_KEY。'],
+  ['ccswitch 导入后为什么没生效？', '常见原因是浏览器没拉起 ccswitch、导入的是旧 Key、工具进程没完全退出，或 Claude Code / Codex 实际读取了另一个配置文件。'],
+  ['缓存和压缩会影响费用吗？', '会。长对话可能触发压缩，旧缓存失效后下一次请求费用可能升高。推荐把长期项目规则写进 CLAUDE.md 或 AGENTS.md。'],
+  ['为什么有时显示的模型和我选的不一样？', '客户端可能对标题、辅助任务或轻量步骤使用不同模型。正式任务仍应按主模型策略与后台记录判断。'],
+  ['服务全部不可用怎么办？', '先等几分钟并换线路复测；如果多个客户端都失败，可能是上游官方 API、线路或网关波动。不要无限重试，先看公告或联系支持。'],
+  ['生产环境怎么更安全？', '按成员、项目、环境拆 Key；设置日/月预算和速率限制；日志只保留必要计费与错误信息；定期轮换 Key。'],
+  ['还是解决不了怎么办？', '整理系统、工具、配置方式、错误截图、最后 20 行终端输出、是否换过线路，再发给支持或社群，排查效率最高。'],
+];
+
+const topicLinks = [
+  ['Claude Code 手动配置', '/claude-code-api-proxy', 'settings.json、ANTHROPIC_API_KEY、ANTHROPIC_BASE_URL、压缩阈值与排错。'],
+  ['Codex 手动配置', '/codex-api-config', 'config.toml、auth.json、model_provider、OPENAI_API_KEY 与验证流程。'],
+  ['OpenAI 兼容 API', '/openai-compatible-api', 'base_url、/v1、SDK 迁移、Cursor / Cline / Roo Code 通用配置。'],
+  ['API Key 安全清单', '/api-key-safety-checklist', 'Key 分组、预算、日志、敏感数据和团队权限。'],
+  ['Model Not Found 排查', '/troubleshooting-model-not-found', '模型名、provider、路径、套餐权限和上游状态。'],
+  ['429 与余额排查', '/troubleshooting-rate-limit', '并发、余额、RPM/TPM、上游限流和退避重试。'],
 ];
 
 const jsonLd = {
@@ -100,18 +73,15 @@ const jsonLd = {
   mainEntity: faq.map(([name, text]) => ({
     '@type': 'Question',
     name,
-    acceptedAnswer: {
-      '@type': 'Answer',
-      text,
-    },
+    acceptedAnswer: { '@type': 'Answer', text },
   })),
 };
 ---
 
-<BaseLayout title="Claude Code / Codex 中转站使用说明｜AI API 国内接入指南" description="面向 Claude Code、Codex 和 OpenAI 兼容客户端的 AI API 中转站使用说明：购买需知、API Key、一键配置、手动配置、测试消息、FAQ 排查与 /go/ 点击中转追踪。">
-  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+<BaseLayout title="Claude Code / Codex 中转站使用文档｜AI API Base URL 配置与 FAQ" description="面向 Claude Code、Codex、ccswitch、OpenAI 兼容 API 的中转站使用文档：购买前须知、安装、手动配置、API Key 安全、常见错误、FAQ 与生产环境清单。">
+  <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
   <main class="tech-bg min-h-screen overflow-hidden text-slate-100">
-    <section class="relative isolate px-5 pb-20 pt-8 md:px-8 lg:px-12">
+    <section class="relative isolate px-5 pb-16 pt-8 md:px-8 lg:px-12">
       <div class="cyber-orb cyber-orb-one"></div>
       <div class="cyber-orb cyber-orb-two"></div>
       <div class="cyber-scanline"></div>
@@ -121,151 +91,58 @@ const jsonLd = {
           <span class="font-black tracking-wide">AI 中转站 Docs</span>
         </a>
         <div class="hidden items-center gap-6 text-sm text-slate-300 md:flex">
-          <a class="border-0 text-slate-300 no-underline hover:text-cyan-200" href="#before-start">购买需知</a>
-          <a class="border-0 text-slate-300 no-underline hover:text-cyan-200" href="#quickstart">快速配置</a>
-          <a class="border-0 text-slate-300 no-underline hover:text-cyan-200" href="#troubleshooting">排错矩阵</a>
+          <a class="border-0 text-slate-300 no-underline hover:text-cyan-200" href="#start">开始</a>
+          <a class="border-0 text-slate-300 no-underline hover:text-cyan-200" href="#claude-code">Claude Code</a>
+          <a class="border-0 text-slate-300 no-underline hover:text-cyan-200" href="#codex">Codex</a>
           <a class="border-0 text-slate-300 no-underline hover:text-cyan-200" href="#faq">FAQ</a>
         </div>
-        <a href="#quickstart" class="rounded-full border-0 bg-cyan-300 px-4 py-2 text-sm font-bold text-slate-950 no-underline shadow-lg shadow-cyan-400/20">复制配置模板</a>
+        <a href="#quickstart" class="rounded-full border-0 bg-cyan-300 px-4 py-2 text-sm font-bold text-slate-950 no-underline shadow-lg shadow-cyan-400/20">看配置模板</a>
       </nav>
 
-      <div class="mx-auto grid max-w-7xl items-center gap-12 pt-20 lg:grid-cols-[1.04fr_.96fr]">
+      <div class="mx-auto grid max-w-7xl items-center gap-12 pt-20 lg:grid-cols-[1.05fr_.95fr]">
         <div>
-          <p class="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100 shadow-lg shadow-cyan-950/20">Claude Code / Codex · API 中转站使用说明</p>
-          <h1 class="mt-7 text-4xl font-black leading-tight tracking-tight text-white md:text-6xl lg:text-7xl">AI API 中转站：Claude Code / Codex 国内接入与 Base URL 配置指南</h1>
-          <p class="mt-6 max-w-2xl text-lg leading-8 text-slate-300">面向 Claude Code、Codex、Cursor、Cline 和 OpenAI 兼容 API 客户端的中转站使用说明。先确认 API Key、YOUR_API_DOMAIN、模型名、价格倍率和风险边界，再复制配置、发送测试消息并按错误码排查。</p>
+          <p class="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-1 text-sm font-semibold text-cyan-100 shadow-lg shadow-cyan-950/20">Claude Code / Codex · 中转站小白接入指南</p>
+          <h1 class="mt-7 text-4xl font-black leading-tight tracking-tight text-white md:text-6xl lg:text-7xl">AI API 中转站使用文档：从购买、安装到 Base URL 配置与 FAQ 排查</h1>
+          <p class="mt-6 max-w-3xl text-lg leading-8 text-slate-300">这不是简单推广页，而是可收录的使用文档主页。除具体中转地址、私有 Key、控制台入口不搬运外，安装步骤、配置路径、字段说明、错误排查、缓存压缩和安全规则都应做成通用教程。</p>
           <div class="mt-9 flex flex-col gap-3 sm:flex-row">
-            <a href="#before-start" class="rounded-full border-0 bg-cyan-300 px-6 py-3 text-center font-black text-slate-950 no-underline shadow-xl shadow-cyan-400/25">第一次使用</a>
-            <a href="#quickstart" class="rounded-full border border-white/15 bg-white/10 px-6 py-3 text-center font-bold text-white no-underline backdrop-blur hover:bg-white/15">已有 Key，直接配置</a>
-            <a href="#troubleshooting" class="rounded-full border border-white/15 px-6 py-3 text-center font-bold text-slate-200 no-underline hover:bg-white/10">出问题，先排查</a>
-          </div>
-          <div class="mt-8 flex flex-wrap gap-3 text-sm text-slate-400">
-            <span class="rounded-full border border-white/10 bg-white/[.04] px-3 py-1">OpenAI-compatible</span>
-            <span class="rounded-full border border-white/10 bg-white/[.04] px-3 py-1">Claude Code</span>
-            <span class="rounded-full border border-white/10 bg-white/[.04] px-3 py-1">Codex</span>
-            <span class="rounded-full border border-white/10 bg-white/[.04] px-3 py-1">Base URL</span>
-            <span class="rounded-full border border-white/10 bg-white/[.04] px-3 py-1">API Key 配置</span>
-            <span class="rounded-full border border-white/10 bg-white/[.04] px-3 py-1">model not found / 429 排查</span>
+            <a href="#start" class="rounded-full border-0 bg-cyan-300 px-6 py-3 text-center font-black text-slate-950 no-underline shadow-xl shadow-cyan-400/25">按情况开始</a>
+            <a href="#claude-code" class="rounded-full border border-white/15 bg-white/10 px-6 py-3 text-center font-bold text-white no-underline backdrop-blur hover:bg-white/15">配置 Claude Code</a>
+            <a href="#codex" class="rounded-full border border-white/15 px-6 py-3 text-center font-bold text-slate-200 no-underline hover:bg-white/10">配置 Codex</a>
           </div>
         </div>
-
         <div class="relative">
           <div class="absolute -inset-8 rounded-full bg-cyan-400/20 blur-3xl"></div>
           <div class="holo-card relative rounded-[2rem] border border-cyan-300/20 bg-slate-950/80 p-5 shadow-2xl shadow-cyan-950/50 backdrop-blur-xl">
             <div class="mb-4 flex items-center justify-between border-b border-white/10 pb-4">
-              <div class="flex items-center gap-2">
-                <span class="h-3 w-3 rounded-full bg-red-400"></span><span class="h-3 w-3 rounded-full bg-amber-300"></span><span class="h-3 w-3 rounded-full bg-emerald-300"></span>
-              </div>
-              <span class="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 text-xs font-bold text-emerald-200">Gateway Demo</span>
+              <div class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-red-400"></span><span class="h-3 w-3 rounded-full bg-amber-300"></span><span class="h-3 w-3 rounded-full bg-emerald-300"></span></div>
+              <span class="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 text-xs font-bold text-emerald-200">Doc-first SEO</span>
             </div>
-            <div class="rounded-3xl border border-cyan-300/15 bg-cyan-300/[.06] p-4">
-              <div class="flex items-center justify-between gap-4">
-                <div>
-                  <p class="text-xs uppercase tracking-[.22em] text-cyan-300">Live Route</p>
-                  <h3 class="mt-2 text-2xl font-black text-white">Claude Code → API Gateway</h3>
+            <h2 class="text-2xl font-black text-white">上线前信息边界</h2>
+            <div class="mt-5 grid gap-3">
+              {endpointRules.map(([label, text]) => (
+                <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-4">
+                  <b class="text-cyan-200">{label}</b>
+                  <p class="mt-2 text-sm leading-6 text-slate-400">{text}</p>
                 </div>
-                <div class="grid h-14 w-14 place-items-center rounded-2xl bg-cyan-300 text-2xl text-slate-950 shadow-lg shadow-cyan-400/20">⌁</div>
-              </div>
-              <div class="mt-5 grid gap-3">
-                {gateways.map(([label, text]) => (
-                  <div class="flex items-start gap-3 rounded-2xl border border-white/10 bg-slate-950/70 p-3">
-                    <span class="mt-1 h-2.5 w-2.5 rounded-full bg-cyan-300 shadow-lg shadow-cyan-300/70"></span>
-                    <div><b class="text-sm text-white">{label}</b><p class="text-sm leading-6 text-slate-400">{text}</p></div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <pre class="mt-4 overflow-hidden whitespace-pre-wrap rounded-3xl border border-white/10 bg-black/35 p-4 text-xs leading-6 text-cyan-100"><code>POST /v1/messages 200
-model route matched: claude-sonnet
-key scope: project-dev
-billing: token usage recorded
-next: copy config or open troubleshooting</code></pre>
-            <div class="mt-5 grid gap-3 text-center text-xs sm:grid-cols-3">
-              {metrics.map(([value, label, text]) => (
-                <div class="rounded-2xl border border-white/10 bg-white/5 p-3"><b class="block text-lg text-cyan-200">{value}</b><span class="font-bold text-white">{label}</span><span class="mt-1 block text-slate-500">{text}</span></div>
               ))}
             </div>
+            <pre class="mt-4 overflow-auto rounded-3xl border border-white/10 bg-black/35 p-4 text-xs leading-6 text-cyan-100"><code>真实地址：从后台复制，不写死在 SEO 页
+示例域名：https://YOUR_API_DOMAIN
+示例 Key：sk-xxxxxxxxxxxxxxxx
+验证消息：请回复“配置已生效”</code></pre>
           </div>
         </div>
       </div>
     </section>
 
-    <section id="before-start" class="mx-auto max-w-7xl px-5 py-10 md:px-8 lg:px-12">
-      <div class="mb-8 max-w-3xl">
-        <p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">Choose your path</p>
-        <h2 class="mt-3 text-3xl font-black text-white md:text-5xl">按你的情况开始</h2>
-        <p class="mt-4 text-slate-400">这是使用说明型 SEO 页的核心：不用让用户读完整站，先把他送到正确路径。</p>
-      </div>
+    <section id="start" class="mx-auto max-w-7xl px-5 py-10 md:px-8 lg:px-12">
+      <div class="mb-8 max-w-3xl"><p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">Start by situation</p><h2 class="mt-3 text-3xl font-black text-white md:text-5xl">按你的情况开始</h2><p class="mt-4 text-slate-400">文档主页要像导航台：第一次、已有 Key、手动配置、排错都能一步进入。</p></div>
       <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
         {paths.map((item) => (
           <a href={item.href} class="group rounded-[1.7rem] border border-white/10 bg-white/[.055] p-6 no-underline shadow-xl shadow-black/20 transition hover:-translate-y-1 hover:border-cyan-300/60 hover:bg-cyan-300/10">
-            <span class="text-sm font-black text-cyan-300">{item.n}</span>
-            <h3 class="mt-4 text-2xl font-black text-white">{item.title}</h3>
-            <p class="mt-3 leading-7 text-slate-400">{item.text}</p>
-            <span class="mt-5 inline-flex text-cyan-200">进入路径 →</span>
+            <span class="text-sm font-black text-cyan-300">{item.n}</span><h3 class="mt-4 text-2xl font-black text-white">{item.title}</h3><p class="mt-3 leading-7 text-slate-400">{item.text}</p><span class="mt-5 inline-flex text-cyan-200">进入路径 →</span>
           </a>
         ))}
-      </div>
-    </section>
-
-    <section id="pricing" class="mx-auto max-w-7xl px-5 py-12 md:px-8 lg:px-12">
-      <div class="grid gap-8 lg:grid-cols-[.85fr_1.15fr]">
-        <div>
-          <p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">Model & Pricing</p>
-          <h2 class="mt-3 text-3xl font-black text-white md:text-5xl">模型、价格、入口要放在用户下单前</h2>
-          <p class="mt-5 leading-8 text-slate-400">这里先放安全占位：正式上线前需要替换为真实控制台、真实套餐和真实支持模型。没有数据就标“待接入”，不编稳定率和价格，这是底线。</p>
-          <div class="mt-7 grid gap-3 sm:grid-cols-3">
-            {ctas.map(([title, href, text]) => (
-              <a href={href} class="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 no-underline transition hover:-translate-y-1 hover:bg-cyan-300/15">
-                <b class="block text-white">{title}</b>
-                <span class="mt-2 block text-sm leading-6 text-slate-400">{text}</span>
-              </a>
-            ))}
-          </div>
-        </div>
-        <div class="grid gap-4 md:grid-cols-2">
-          {modelPlans.map(([name, usage, note]) => (
-            <div class="rounded-[1.5rem] border border-white/10 bg-slate-950/65 p-5 shadow-xl shadow-black/20">
-              <div class="flex items-center justify-between gap-4">
-                <h3 class="text-xl font-black text-white">{name}</h3>
-                <span class="rounded-full border border-cyan-300/25 px-3 py-1 text-xs font-bold text-cyan-200">待确认</span>
-              </div>
-              <p class="mt-3 leading-7 text-slate-400">{usage}</p>
-              <p class="mt-4 rounded-2xl bg-white/[.045] p-3 text-sm leading-6 text-slate-500">{note}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-
-    <section class="mx-auto max-w-7xl px-5 py-12 md:px-8 lg:px-12">
-      <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {features.map(([title, text]) => (
-          <div class="rounded-[1.5rem] border border-cyan-300/15 bg-slate-900/60 p-6 backdrop-blur">
-            <h3 class="text-xl font-black text-white">{title}</h3>
-            <p class="mt-3 leading-7 text-slate-400">{text}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-
-    <section class="mx-auto max-w-7xl px-5 py-12 md:px-8 lg:px-12">
-      <div class="rounded-[2rem] border border-cyan-300/15 bg-slate-900/40 p-6 md:p-10">
-        <div class="grid gap-8 lg:grid-cols-[.8fr_1.2fr]">
-          <div>
-            <p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">Trust Layer</p>
-            <h2 class="mt-3 text-3xl font-black text-white md:text-5xl">不只告诉用户“能用”，还要告诉他“怎么算、哪里看、失败怎么办”</h2>
-            <p class="mt-5 leading-8 text-slate-400">中文中转站用户最关心透明度：价格倍率、余额、线路状态、请求统计和数据安全。把这些写在首页，页面才像可信的使用说明，而不是空泛推广。</p>
-          </div>
-          <div class="grid gap-4 md:grid-cols-2">
-            {trustItems.map(([title, text]) => (
-              <div class="rounded-2xl border border-white/10 bg-white/[.045] p-5">
-                <h3 class="font-black text-white">{title}</h3>
-                <p class="mt-2 text-sm leading-6 text-slate-400">{text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </section>
 
@@ -274,113 +151,89 @@ next: copy config or open troubleshooting</code></pre>
         <p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">Quick Start</p>
         <h2 class="mt-3 text-3xl font-black text-white md:text-5xl">新机器推荐路径</h2>
         <div class="mt-8 grid gap-5 md:grid-cols-4">
-          {steps.map(([title, text], index) => (
-            <div class="relative rounded-3xl border border-white/10 bg-slate-950/70 p-5">
-              <span class="absolute -top-3 left-5 rounded-full bg-cyan-300 px-3 py-1 text-xs font-black text-slate-950">0{index + 1}</span>
-              <h3 class="mt-4 text-xl font-black text-white">{title}</h3>
-              <p class="mt-3 text-sm leading-6 text-slate-400">{text}</p>
-            </div>
+          {quickSteps.map(([title, text], index) => (
+            <div class="relative rounded-3xl border border-white/10 bg-slate-950/70 p-5"><span class="absolute -top-3 left-5 rounded-full bg-cyan-300 px-3 py-1 text-xs font-black text-slate-950">0{index + 1}</span><h3 class="mt-4 text-xl font-black text-white">{title}</h3><p class="mt-3 text-sm leading-6 text-slate-400">{text}</p></div>
           ))}
         </div>
       </div>
     </section>
 
-    <section id="manual-config" class="mx-auto max-w-7xl px-5 py-12 md:px-8 lg:px-12">
-      <div class="grid gap-8 lg:grid-cols-[.9fr_1.1fr]">
-        <div>
-          <p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">Configuration</p>
-          <h2 class="mt-3 text-3xl font-black text-white md:text-5xl">配置说明要短、准、可复制</h2>
-          <p class="mt-5 leading-8 text-slate-400">中转站 SEO 不是堆关键词，而是把用户真实问题整理成可操作说明：Base URL 在哪里填、Key 怎么放、模型名怎么选、失败怎么排查。</p>
+    <section id="ccswitch" class="mx-auto max-w-7xl px-5 py-12 md:px-8 lg:px-12">
+      <div class="grid gap-8 lg:grid-cols-[.85fr_1.15fr]">
+        <div><p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">ccswitch</p><h2 class="mt-3 text-3xl font-black text-white md:text-5xl">已安装工具时，优先用 ccswitch 导入</h2><p class="mt-5 leading-8 text-slate-400">ccswitch 适合已经装好 Claude Code 或 Codex 的用户。它从后台导入 API Key 和 Base URL，减少手动编辑 JSON/TOML 的出错概率。导入后仍要完全关闭客户端和终端再验证。</p></div>
+        <div class="grid gap-4 md:grid-cols-2">
+          {['后台 API 密钥页点击“导入到 CCS”', '允许浏览器打开 ccswitch', '确认供应商、端点和打码 Key 后导入', '在 ccswitch 列表确认余额和 Base URL'].map((text, i) => (
+            <div class="rounded-2xl border border-white/10 bg-slate-950/65 p-5"><b class="text-cyan-200">0{i + 1}</b><p class="mt-3 leading-7 text-slate-400">{text}</p></div>
+          ))}
         </div>
-        <div class="rounded-[2rem] border border-cyan-300/20 bg-[#07101f] p-6 shadow-2xl shadow-black/30">
-          <pre class="overflow-auto text-sm leading-7 text-slate-200"><code># Claude Code 中转站 · Anthropic compatible
-# 将 YOUR_API_DOMAIN 替换为业务确认后的真实 API 域名
-export ANTHROPIC_BASE_URL="https://YOUR_API_DOMAIN/anthropic"
-export ANTHROPIC_AUTH_TOKEN="sk-your-api-key"
-export ANTHROPIC_MODEL="控制台显示的模型名"
-claude /status
+      </div>
+    </section>
 
-# Codex API 配置 · OpenAI 兼容 API
-# ~/.codex/config.toml
-model = "控制台显示的 OpenAI compatible model id"
-openai_base_url = "https://YOUR_API_DOMAIN/v1"
+    <section id="claude-code" class="mx-auto max-w-7xl px-5 py-12 md:px-8 lg:px-12">
+      <div class="grid gap-8 lg:grid-cols-[.9fr_1.1fr]">
+        <div><p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">Claude Code</p><h2 class="mt-3 text-3xl font-black text-white md:text-5xl">Claude Code 手动配置</h2><p class="mt-5 leading-8 text-slate-400">当自动导入不可用时，手动修改 settings.json。重点是先备份、只合并 env 字段、不要清空已有配置。</p><div class="mt-6 grid gap-3">{claudeChecks.map(([k, v]) => <div class="rounded-2xl border border-white/10 bg-white/[.045] p-4"><b class="text-white">{k}</b><p class="mt-1 text-sm text-slate-400">{v}</p></div>)}</div></div>
+        <div class="rounded-[2rem] border border-cyan-300/20 bg-[#07101f] p-6 shadow-2xl shadow-black/30"><pre class="overflow-auto text-sm leading-7 text-slate-200"><code>{`{
+  "env": {
+    "ANTHROPIC_API_KEY": "sk-xxxxxxxxxxxxxxxx",
+    "ANTHROPIC_BASE_URL": "https://YOUR_API_DOMAIN",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "78"
+  }
+}`}</code></pre><p class="mt-4 text-sm leading-6 text-slate-400">保存后完全关闭 Claude Code 和终端，重新打开执行 claude，再发送测试消息。认证失败优先查 Key；连接失败优先查 Base URL 和线路。</p></div>
+      </div>
+    </section>
 
-# OpenAI SDK / compatible client
-OPENAI_API_KEY="sk-your-api-key"
-base_url="https://YOUR_API_DOMAIN/v1"
+    <section id="codex" class="mx-auto max-w-7xl px-5 py-12 md:px-8 lg:px-12">
+      <div class="grid gap-8 lg:grid-cols-[.9fr_1.1fr]">
+        <div><p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">Codex</p><h2 class="mt-3 text-3xl font-black text-white md:text-5xl">Codex 手动配置</h2><p class="mt-5 leading-8 text-slate-400">Codex 通常需要两个文件：config.toml 写 provider、模型和 Base URL；auth.json 写 API Key。Key 不属于项目文件，不能提交。</p><div class="mt-6 grid gap-3">{codexChecks.map(([k, v]) => <div class="rounded-2xl border border-white/10 bg-white/[.045] p-4"><b class="text-white">{k}</b><p class="mt-1 text-sm text-slate-400">{v}</p></div>)}</div></div>
+        <div class="rounded-[2rem] border border-cyan-300/20 bg-[#07101f] p-6 shadow-2xl shadow-black/30"><pre class="overflow-auto text-sm leading-7 text-slate-200"><code>{`# ~/.codex/config.toml
+model_provider = "custom"
+model = "gpt-5.4"
 
-# 测试建议
-1. 先发短消息
-2. 确认 API Key、余额和倍率
-3. 再切换到正式任务</code></pre>
+[model_providers.custom]
+name = "custom"
+base_url = "https://YOUR_API_DOMAIN"
+wire_api = "responses"
+requires_openai_auth = true
+
+# ~/.codex/auth.json
+{
+  "OPENAI_API_KEY": "sk-xxxxxxxxxxxxxxxx"
+}`}</code></pre><p class="mt-4 text-sm leading-6 text-slate-400">验证：重开终端后执行 codex login status，再进入 codex 发送测试消息。</p></div>
+      </div>
+    </section>
+
+    <section id="advanced" class="mx-auto max-w-7xl px-5 py-12 md:px-8 lg:px-12">
+      <div class="rounded-[2rem] border border-cyan-300/15 bg-slate-900/40 p-6 md:p-10">
+        <p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">Advanced</p>
+        <h2 class="mt-3 text-3xl font-black text-white md:text-5xl">长对话、缓存与记忆文件</h2>
+        <div class="mt-8 grid gap-5 md:grid-cols-3">
+          <div class="rounded-2xl border border-white/10 bg-white/[.045] p-5"><h3 class="font-black text-white">上下文窗口</h3><p class="mt-3 text-sm leading-6 text-slate-400">历史消息、文件和工具结果都会占上下文。窗口大小随模型和线路变化，文档不要写死永久值。</p></div>
+          <div class="rounded-2xl border border-white/10 bg-white/[.045] p-5"><h3 class="font-black text-white">自动压缩</h3><p class="mt-3 text-sm leading-6 text-slate-400">长任务可能触发压缩，早期细节变模糊，缓存重新建立，下一次请求费用可能上升。</p></div>
+          <div class="rounded-2xl border border-white/10 bg-white/[.045] p-5"><h3 class="font-black text-white">记忆文件</h3><p class="mt-3 text-sm leading-6 text-slate-400">Claude Code 用 CLAUDE.md，Codex 用 AGENTS.md。只写长期规则、命令和业务约束，不写 Key、Cookie、Token。</p></div>
         </div>
       </div>
     </section>
 
     <section id="troubleshooting" class="mx-auto max-w-7xl px-5 py-14 md:px-8 lg:px-12">
-      <p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">Troubleshooting Matrix</p>
-      <h2 class="mt-3 text-3xl font-black text-white md:text-5xl">把错误码变成下一步动作</h2>
-      <div class="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {troubleshooting.map(([q, a]) => (
-          <div class="rounded-[1.5rem] border border-white/10 bg-white/[.045] p-6">
-            <h3 class="text-xl font-black text-white">{q}</h3>
-            <p class="mt-3 leading-7 text-slate-400">{a}</p>
-          </div>
-        ))}
-      </div>
+      <p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">Troubleshooting</p><h2 class="mt-3 text-3xl font-black text-white md:text-5xl">先做三步：确认 Key、确认线路、重启工具</h2>
+      <div class="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">{troubleshooting.map(([q, a]) => <div class="rounded-[1.5rem] border border-white/10 bg-white/[.045] p-6"><h3 class="text-xl font-black text-white">{q}</h3><p class="mt-3 leading-7 text-slate-400">{a}</p></div>)}</div>
     </section>
-
 
     <section id="topics" class="mx-auto max-w-7xl px-5 py-12 md:px-8 lg:px-12">
-      <div class="mb-8 max-w-3xl">
-        <p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">Topic Cluster</p>
-        <h2 class="mt-3 text-3xl font-black text-white md:text-5xl">目录主题先铺好，长尾内容再逐步扩展</h2>
-        <p class="mt-4 text-slate-400">首页承接 P0 搜索意图，专题页承接 Claude Code API 配置、Codex API 配置、OpenAI 兼容 API、价格模型和错误码排查，避免所有关键词挤在一个页面。</p>
-      </div>
-      <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {topicLinks.map(([title, href, text]) => (
-          <a href={href} class="rounded-[1.5rem] border border-white/10 bg-slate-950/65 p-6 no-underline shadow-xl shadow-black/20 transition hover:-translate-y-1 hover:border-cyan-300/50 hover:bg-cyan-300/10">
-            <h3 class="text-xl font-black text-white">{title}</h3>
-            <p class="mt-3 leading-7 text-slate-400">{text}</p>
-            <span class="mt-5 inline-flex text-sm font-bold text-cyan-200">查看专题 →</span>
-          </a>
-        ))}
-      </div>
-    </section>
-
-    <section id="production" class="mx-auto max-w-7xl px-5 py-14 md:px-8 lg:px-12">
-      <div class="rounded-[2rem] border border-cyan-300/20 bg-gradient-to-br from-cyan-300/10 via-indigo-500/10 to-slate-950 p-8 md:p-10">
-        <p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">Production Checklist</p>
-        <h2 class="mt-3 text-3xl font-black text-white md:text-5xl">从个人测试走向团队生产</h2>
-        <div class="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-          {production.map(([title, text]) => (
-            <div class="rounded-2xl border border-white/10 bg-slate-950/55 p-5">
-              <h3 class="font-black text-white">{title}</h3>
-              <p class="mt-3 text-sm leading-6 text-slate-400">{text}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+      <div class="mb-8 max-w-3xl"><p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">Topic Cluster</p><h2 class="mt-3 text-3xl font-black text-white md:text-5xl">专题页继续承接长尾搜索</h2><p class="mt-4 text-slate-400">首页讲完整路径，专题页扩展单点配置、错误码和安全清单。</p></div>
+      <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{topicLinks.map(([title, href, text]) => <a href={href} class="rounded-[1.5rem] border border-white/10 bg-slate-950/65 p-6 no-underline shadow-xl shadow-black/20 transition hover:-translate-y-1 hover:border-cyan-300/50 hover:bg-cyan-300/10"><h3 class="text-xl font-black text-white">{title}</h3><p class="mt-3 leading-7 text-slate-400">{text}</p><span class="mt-5 inline-flex text-sm font-bold text-cyan-200">查看专题 →</span></a>)}</div>
     </section>
 
     <section id="faq" class="mx-auto max-w-7xl px-5 py-14 md:px-8 lg:px-12">
-      <p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">FAQ</p>
-      <h2 class="mt-3 text-3xl font-black text-white md:text-5xl">常见问题先放出来，减少来回解释</h2>
-      <div class="mt-8 grid gap-5 md:grid-cols-2">
-        {faq.map(([q, a]) => (
-          <div class="rounded-[1.5rem] border border-white/10 bg-white/[.045] p-6">
-            <h3 class="text-xl font-black text-white">{q}</h3>
-            <p class="mt-3 leading-7 text-slate-400">{a}</p>
-          </div>
-        ))}
-      </div>
+      <p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">FAQ</p><h2 class="mt-3 text-3xl font-black text-white md:text-5xl">常见问题要比推广文案更充足</h2>
+      <div class="mt-8 grid gap-5 md:grid-cols-2">{faq.map(([q, a]) => <div class="rounded-[1.5rem] border border-white/10 bg-white/[.045] p-6"><h3 class="text-xl font-black text-white">{q}</h3><p class="mt-3 leading-7 text-slate-400">{a}</p></div>)}</div>
     </section>
 
     <section class="mx-auto max-w-7xl px-5 pb-20 md:px-8 lg:px-12">
       <div class="rounded-[2rem] border border-cyan-300/20 bg-gradient-to-br from-cyan-300/15 via-indigo-500/10 to-slate-950 p-8 text-center">
-        <h2 class="text-3xl font-black text-white md:text-5xl">下一步：确认真实控制台、价格页和 API 域名</h2>
-        <p class="mx-auto mt-5 max-w-2xl leading-8 text-slate-300">当前版本聚焦 AI API 中转站 SEO 和使用说明，安全保留 YOUR_API_DOMAIN 占位。真实购买入口、价格页、状态页和社群入口确认后，再统一接入 /go/ 中转与统计。</p>
-        <a href="#quickstart" class="mt-8 inline-flex rounded-full border-0 bg-cyan-300 px-7 py-3 font-black text-slate-950 no-underline shadow-xl shadow-cyan-400/25">回到配置模板</a>
+        <h2 class="text-3xl font-black text-white md:text-5xl">下一步：继续把原文档拆成专题页</h2>
+        <p class="mx-auto mt-5 max-w-3xl leading-8 text-slate-300">首页已经改成文档型落地页。后续每小时迭代会继续扩展 Claude Code、Codex、ccswitch、上下文压缩、记忆文件和错误排查专题，同时保持真实中转地址不写死。</p>
+        <a href="#quickstart" class="mt-8 inline-flex rounded-full border-0 bg-cyan-300 px-7 py-3 font-black text-slate-950 no-underline shadow-xl shadow-cyan-400/25">回到配置路径</a>
       </div>
     </section>
   </main>
