@@ -15,15 +15,15 @@ Cursor 场景最容易踩坑的地方，不是不会填 Base URL，而是**把 C
 
 > 你在 Cursor 里能用的 AI，不一定都走同一套 Key、同一套 provider、同一套配置文件。
 
-我又按官方资料核对了一遍：Claude Code 的 settings / plugins 属于 Claude Code 自己的配置 scope；Codex IDE 扩展使用 Codex CLI，并把默认模型、审批、sandbox 等底层行为放在共享 `~/.codex/config.toml`。所以 Cursor 原生 API、Claude Code 扩展、Codex 扩展三者应按隔离配置来排查。
+我又按官方资料核对了一遍，这里要更精确地拆开：Claude Code 在 VS Code/Cursor 里有独立的 **Extension settings**，用于控制扩展 UI/交互；同时也读取 Claude Code 共享 settings/env，例如 `~/.claude/settings.json`，这部分官方说明会被扩展和 CLI 共享。Codex IDE 扩展则使用 Codex CLI，并把默认模型、审批、sandbox 等底层行为放在共享 `~/.codex/config.toml`。所以 Cursor 原生 API、Claude Code 扩展、Codex 扩展三者不能混配，但 Claude Code 扩展也不是“所有配置都只存在插件里”。
 
 ## 先分清 3 条路线
 
 | 你现在要配什么 | 应该看哪条路 | 核心配置 |
 |---|---|---|
 | Cursor 自带 AI 走兼容 API | Cursor 原生 provider 设置 | `base_url` / API Key / 模型名 |
-| 在 Cursor 里使用 Claude Code 扩展 | Claude Code 扩展路线 | Claude Code settings scope，例如 `~/.claude/settings.json` |
-| 在 Cursor 里使用 Codex 扩展 | Codex 扩展路线 | Codex 共享配置，例如 `~/.codex/config.toml` + `~/.codex/auth.json` |
+| 在 Cursor 里使用 Claude Code 扩展 | Claude Code 扩展路线 | VS Code/Cursor 扩展设置 + Claude Code 共享 settings/env，例如 `~/.claude/settings.json` |
+| 在 Cursor 里使用 Codex 扩展 | Codex 扩展路线 | Codex CLI/IDE 共享配置，例如 `~/.codex/config.toml` + `~/.codex/auth.json` |
 
 ## 路线一：Cursor 原生自定义 API
 
@@ -48,7 +48,12 @@ Claude Code 官方文档已经提供 Cursor 扩展安装入口。它更像是把
 - 多会话
 - CLI 与 IDE 联动
 
-如果你要让它走中转站，重点看 Claude Code 自己的 settings / env。不要只改 Cursor 原生 AI 的 provider；那通常不会影响 Claude Code 扩展。
+如果你要让它走中转站，重点拆两层看：
+
+- **扩展设置层**：VS Code/Cursor 的 Extensions → Claude Code，主要控制扩展 UI、权限模式、打开位置、是否用 terminal 模式。
+- **Claude Code 共享配置层**：`~/.claude/settings.json`、项目 `.claude/settings.json` / `.claude/settings.local.json` 或 shell 环境变量，主要控制 gateway/env、hooks、MCP、allowed commands 等 Claude Code 本体行为。
+
+不要只改 Cursor 原生 AI 的 provider；那通常不会影响 Claude Code 扩展。
 
 重点看：
 
@@ -75,7 +80,7 @@ Codex 官方文档明确说明 IDE 扩展支持 Cursor，但 Cursor 的 Activity
 
 | 现象 | 实际问题 | 先查什么 |
 |---|---|---|
-| Cursor 能用，但 Claude Code 扩展报未登录 | 扩展自己的登录态或环境变量没更新 | `~/.claude/settings.json`、编辑器重启 |
+| Cursor 能用，但 Claude Code 扩展报未登录 | 扩展登录态、编辑器继承环境变量、或 Claude Code settings/env 没生效 | VS Code 扩展设置、`~/.claude/settings.json`、编辑器重启 |
 | Codex 扩展还在走默认模型 | `model_provider` 没切到 custom 或旧登录态覆盖 | `~/.codex/config.toml`、`auth.json` |
 | 改了 Cursor base_url，但扩展没变化 | 你改的是 Cursor 原生 AI，不是扩展 | 当前到底是哪一个面板在报错 |
 | 所有东西都失败 | 可能是统一 Key、统一线路或余额问题 | 先查 Key、账户、余额、公告 |
