@@ -1,6 +1,6 @@
 ---
 title: VS Code / Cursor 插件接入 AI API 中转站指南
-description: Claude Code 与 Codex 在 VS Code、Cursor 中如何安装、登录、走中转站、切换模型、设置审批模式与排错。
+description: Claude Code、Codex、Cline 与 Roo Code 在 VS Code、Cursor 中如何区分配置层级、接入中转站、验证与排错。
 tags:
   - docs-seo
   - technical-seo
@@ -9,70 +9,66 @@ tags:
 
 # VS Code / Cursor 插件接入 AI API 中转站指南
 
-如果你现在主要在 VS Code 或 Cursor 里写代码，先不要把“编辑器自带 AI”和“装在编辑器里的 Claude Code / Codex 扩展”混成一件事。
+如果你在 VS Code 或 Cursor 里同时用过 Cursor 原生 AI、Claude Code、Codex、Cline、Roo Code，第一步不是填 Key，而是先分清**谁在发请求、谁读取哪份配置**。
 
-> **重要修正**：Cursor 自己的 provider / base URL 设置，通常不会自动改掉 Claude Code 扩展或 Codex 扩展的请求线路。扩展有自己的 UI 设置、登录态和读取配置的方式；排错时必须先确认当前报错来自哪个面板。
+> **重要修正**：Cursor 自己的 provider / base URL 设置，通常不会自动改掉 Claude Code 扩展、Codex 扩展、Cline 或 Roo Code 的请求线路。每个工具都有自己的登录态、配置入口和模型列表。排错时必须先确认当前报错来自哪个面板。
 
-目前更值得优先关注的两条路线是：
+## 配置层级速查
 
-1. **Claude Code 扩展**：官方 VS Code 文档把配置分成两层：一层是 VS Code 里的 **Extension settings**，只控制扩展在编辑器里的行为；另一层是 Claude Code settings，例如 `~/.claude/settings.json`，官方说明这部分会被扩展和 CLI 共享，用于 allowed commands、环境变量、hooks、MCP servers 等。也就是说：它不是 Cursor 原生 provider 设置；但也不能笼统说“所有配置都只存在 VS Code 插件里”。
-2. **Codex 扩展**：OpenAI 官方说明它可直接运行在 VS Code、Cursor、Windsurf 等 VS Code 兼容编辑器里；Codex IDE 设置页明确写到扩展使用 Codex CLI，默认模型、审批、sandbox 等行为要到共享的 `~/.codex/config.toml` 配置，而不是改 Cursor 原生 AI 设置。
+| 你正在用的入口 | 它是什么 | 主要配置位置 | Base URL 常见写法 | 不要误会成 |
+|---|---|---|---|---|
+| Cursor 原生 AI | Cursor 自带聊天/补全 | Cursor 自己的 provider / model / base URL 设置 | 视 Cursor 配置页要求而定 | 不能控制 Claude Code / Codex / Cline / Roo Code |
+| Claude Code 扩展 | Anthropic 官方 VS Code/Cursor 扩展，和 Claude Code CLI 同一套能力 | 编辑器里的 **Extension settings** + Claude Code settings/env，例如 `~/.claude/settings.json` | Anthropic-compatible gateway 通常用 `ANTHROPIC_BASE_URL=https://www.531288.xyz` | 不是 Cursor 原生 provider；也不是 OpenAI compatible provider 表单 |
+| Codex 扩展 | OpenAI 官方 IDE 扩展，底层与 Codex CLI 共用配置 | `~/.codex/config.toml`、`~/.codex/auth.json`；扩展内也可打开 config | 本站 Codex 手动配置沿用 `https://www.531288.xyz` | 不是 Cursor 原生 AI 设置；也不是 Claude Code env |
+| Cline | VS Code/Cursor 里的第三方编程助手扩展 | Cline 设置面板 → API Provider | OpenAI Compatible 通常填 `https://www.531288.xyz/v1` | 不读取 Claude Code/Codex 的专用配置 |
+| Roo Code | VS Code/Cursor 里的第三方编程助手扩展 | Roo Code 设置面板 → API Provider | OpenAI Compatible 通常填 `https://www.531288.xyz/v1` | 不读取 Claude Code/Codex 的专用配置；还要求模型支持 OpenAI native tool calling |
 
-如果你要让扩展走 AI API 中转站，核心仍然只有三件事：**Key、Base URL、模型名**。但这三件事要写到对应扩展实际读取的位置。
-
-## 先看你属于哪种用法
-
-| 场景 | 推荐路线 | 你要改哪里 |
-|---|---|---|
-| 想在 VS Code / Cursor 里用 Claude Code 面板 | Claude Code 扩展 | 扩展安装 + VS Code 扩展设置 + Claude Code 共享 settings/env，例如 `~/.claude/settings.json` |
-| 想在 VS Code / Cursor 里用 Codex 面板 | Codex 扩展 | 扩展安装 + Codex CLI/IDE 共享配置，例如 `~/.codex/config.toml` + `~/.codex/auth.json` |
-| 不想额外装插件，只想让 Cursor 自己走中转 | Cursor 原生自定义 API | Cursor 自己的 provider / base URL 设置 |
-| 需要 OpenAI 兼容 SDK、Cline、Roo Code 共用一套兼容入口 | OpenAI compatible 路线 | `https://www.531288.xyz/v1` |
+一句话记忆：**Cursor 原生看 Cursor，Claude Code 看 Claude Code settings/env，Codex 看 `.codex`，Cline/Roo Code 看 OpenAI Compatible provider 表单。**
 
 ## 统一准备项
 
 开始前先准备好：
 
 - **API Key**：从账户页面复制。
-- **Base URL**：本文统一写 `https://www.531288.xyz`。
-- **OpenAI 兼容地址**：常用为 `https://www.531288.xyz/v1`。
+- **Claude / Codex 中转地址**：本文示例沿用 `https://www.531288.xyz`。
+- **OpenAI 兼容地址**：Cline、Roo Code、OpenAI compatible SDK 常用 `https://www.531288.xyz/v1`。
 - **模型名**：只用账户页面展示值，不猜官方 model id。
 
 > 经验上，真正最容易出错的不是安装扩展，而是**编辑器还在读旧进程、旧配置或旧登录态**。改完配置后，最好完全退出编辑器和终端再重开。
 
-## Claude Code：VS Code / Cursor 插件怎么接中转站
+## Claude Code：VS Code / Cursor 扩展怎么接中转站
 
 ### 官方资料里值得先知道的点
 
-根据 Claude Code 官方 VS Code 文档：
+Anthropic 官方 IDE integration 文档说明：
 
-- VS Code 扩展是官方推荐用法，可以直接安装到 **VS Code** 和 **Cursor**。
-- 扩展支持 Spark 图标入口、Activity Bar、状态栏入口。
-- 支持 `@文件/目录` 引用、选区带行号引用、Plan 模式、自动接受改动、多会话。
-- 扩展有 **Extension settings in VS Code**，用于控制扩展在 VS Code/Cursor 里的行为，例如默认权限模式、打开位置、是否用 terminal 模式等。
-- 扩展也读取 **Claude Code settings**，官方写明这部分与 CLI 共享，适合放 allowed commands、环境变量、hooks、MCP servers 等。
+- Claude Code 扩展是官方推荐的 VS Code 图形界面用法，可安装到 **VS Code** 和 **Cursor**。
+- 扩展支持 Spark 图标、Activity Bar、状态栏入口、`@文件/目录` 引用、选区带行号引用、Plan 模式、Diff 审批、多会话等。
+- 扩展有 **Extension settings in VS Code**，用于控制扩展在编辑器里的行为，例如默认权限模式、打开位置、是否使用 terminal 模式。
+- Claude Code 也有自己的 **settings/env**。官方 settings 文档说明 `settings.json` 有 user、project、local、managed 等层级，并且支持 VS Code / Cursor 的 JSON schema 与自动补全。
 - 如果编辑器没有继承 shell 环境变量，官方建议从终端用 `code .` 启动，或执行 **Developer: Reload Window**。
 
-另外，Claude Code 官方 LLM gateway 文档已明确：当 `ANTHROPIC_BASE_URL` 指向 **Anthropic-compatible gateway** 时，Claude Code 会在启动时查询网关的 `/v1/models`。
+另外，Anthropic LLM gateway 文档说明：当 `ANTHROPIC_BASE_URL` 指向 Anthropic Messages format 的 gateway 时，Claude Code 启动时会查询 gateway 的 `/v1/models`，并把发现的模型加入 `/model` 选择器；如果失败，会回退到缓存或内置模型列表。
 
-这意味着：**如果你的中转站实现了兼容网关能力，Claude Code 新版对网关模型列表的适配已经更完整。**
+这意味着：**Claude Code 的中转配置属于 Claude Code settings/env，不属于 Cursor 原生 provider 设置。**
 
 ### 安装步骤
 
 1. 在 VS Code / Cursor 的扩展市场搜索 **Claude Code**。
-2. 安装后，打开编辑器右上角 Spark 图标或左侧 Activity Bar。
+2. 安装后，打开编辑器右上角 Spark 图标、左侧 Activity Bar 或状态栏入口。
 3. 如果是第一次打开，会先看到登录或初始化界面。
 
-### 让 Claude Code 扩展走中转站
+### Extension settings vs Claude Code settings/env
 
-这里最容易误解：Claude Code 扩展至少有两层配置。
+| 配置层 | 放在哪里 | 主要管什么 | 中转站相关性 |
+|---|---|---|---|
+| Extension settings | 编辑器 Settings → Extensions → Claude Code | 扩展 UI 行为、打开位置、默认权限模式、terminal 模式等 | 主要是 IDE 行为，不是 Cursor 原生 provider |
+| Claude Code user settings | `~/.claude/settings.json` | 个人全局 Claude Code 行为 | 可放 `env`、allowed commands、hooks、MCP servers 等 |
+| Claude Code project settings | 项目内 `.claude/settings.json` | 团队共享设置 | 适合共享权限、hooks、MCP；不要提交私人 Key |
+| Claude Code local settings | 项目内 `.claude/settings.local.json` | 个人项目内覆盖 | 适合本机私有配置，通常不提交 |
+| Shell 环境变量 | 终端环境 | 当前进程继承的 Key、Base URL 等 | 编辑器未继承时会导致“终端可用、扩展不可用” |
 
-| 配置层 | 放在哪里 | 主要管什么 |
-|---|---|---|
-| VS Code / Cursor 扩展设置 | 编辑器 Settings → Extensions → Claude Code | 扩展 UI 行为，例如默认权限模式、打开位置、是否用 terminal 模式 |
-| Claude Code settings/env | `~/.claude/settings.json`、`.claude/settings.json`、`.claude/settings.local.json` 或 shell 环境变量 | Claude Code 本体行为，例如 gateway env、allowed commands、hooks、MCP servers |
-
-如果你走中转站，Base URL / Key 通常应该按 Claude Code 的 gateway/env 方式配置，而不是改 Cursor 原生 provider。编辑器里的扩展设置更多是“扩展怎么显示、怎么交互”，不等于 Cursor 自带 AI 的模型供应商设置，也不等于 Codex 配置。
+如果你走中转站，Base URL / Key 通常应该按 Claude Code 的 gateway/env 方式配置，而不是改 Cursor 原生 provider。编辑器里的 Extension settings 更多是“扩展怎么显示、怎么交互”。
 
 #### Windows
 
@@ -98,24 +94,27 @@ tags:
 }
 ```
 
+如果你已有 `settings.json`，不要整文件覆盖；只合并 `env` 里缺少的字段。项目级 `.claude/settings.json` 不要写入私人 Key。
+
 ### 验证是否真的走了中转
 
 1. 保存配置。
 2. 完全退出 Claude Code、编辑器和终端。
-3. 重新打开编辑器。
-4. 发一条短消息，例如：
+3. 重新打开编辑器；必要时从终端启动，让 IDE 继承环境变量。
+4. 在 Claude Code 面板发送短消息：
 
 ```text
 请回复“配置已生效”。
 ```
 
-如果你在扩展里仍然看到默认登录逻辑、模型列表不对或提示未登录，优先排查这几项：
+如果仍然看到默认登录逻辑、模型列表不对或提示未登录，优先排查：
 
-- 你改的是 Cursor 原生 provider，而不是 Claude Code 扩展/Claude Code settings。
+- 你改的是 Cursor 原生 provider，而不是 Claude Code settings/env。
 - 编辑器没有继承新的环境变量。
 - 旧终端或旧扩展进程还在。
-- VS Code / Cursor 扩展设置和 `~/.claude/settings.json` 混淆了。
-- 当前是账号登录态，和你想要的 Key / gateway 路线不一致。
+- VS Code / Cursor Extension settings 和 `~/.claude/settings.json` 混淆了。
+- 当前仍是账号登录态，和你想要的 Key / gateway 路线不一致。
+- gateway 没有按 Anthropic Messages format 暴露必要接口，或 `/v1/models` 返回不符合 Claude Code 过滤规则。
 
 ### Claude Code 扩展适合谁
 
@@ -129,18 +128,21 @@ tags:
 
 - [Claude Code 中转站手动配置教程](/claude-code-api-proxy)
 
-## Codex：VS Code / Cursor 插件怎么接中转站
+## Codex：VS Code / Cursor 扩展怎么接中转站
 
 ### 官方资料里值得先知道的点
 
-根据 OpenAI 官方 Codex IDE 文档：
+OpenAI 官方 Codex IDE 文档说明：
 
 - Codex IDE 扩展支持 **VS Code、Cursor、Windsurf** 等 VS Code 兼容编辑器。
 - 默认会出现在编辑器侧边栏。
 - 在 **Cursor** 中，Activity Bar 可能是横向布局，图标会被折叠；官方建议临时改成竖向后，把 Codex 拖到右侧边栏。
-- Codex 扩展与 **Codex CLI 共用配置**。
-- 扩展里可切换 **Chat / Agent / Agent (Full Access)**、模型和 reasoning effort。
-- 支持 `@文件` 引用、云端任务委派、云端任务回放和继续本地收尾。
+- 扩展可用 ChatGPT 账号或 API Key 登录。
+- 扩展支持模型切换、reasoning effort、Chat / Agent / Agent (Full Access)、`@文件` 引用、云端任务委派等。
+
+OpenAI 官方 config basics 文档还说明：Codex CLI 和 IDE 扩展共享配置层级，用户配置在 `~/.codex/config.toml`，项目覆盖可放 `.codex/config.toml`，扩展内可通过齿轮菜单打开 `config.toml`。
+
+这意味着：**Codex 的 provider、默认模型、审批和 sandbox 等底层行为，不靠 Cursor 原生 AI 设置控制。**
 
 ### 安装步骤
 
@@ -148,18 +150,14 @@ tags:
 2. 打开侧边栏里的 Codex 面板。
 3. 若在 Cursor 中没看到面板，先检查图标是否被折叠；必要时临时把 Activity Bar 改成竖向，再把 Codex 拖到右侧边栏。
 
-### 登录方式
+### 登录和配置文件
 
 官方支持两种主路线：
 
 - 用 **ChatGPT 账号**登录。
 - 用 **API Key** 路线。
 
-如果你要明确控制中转站、模型和 provider，通常更建议走 **API Key + config.toml** 这条路。
-
-### 让 Codex 走中转站
-
-Codex IDE 扩展使用 Codex CLI，并把默认模型、审批模式、sandbox 等底层行为放在共享 `~/.codex/config.toml`。因此在 Cursor 里改 Cursor 自己的 AI Base URL，通常不会改变 Codex 扩展的 provider。
+如果你要明确控制中转站、模型和 provider，通常更建议走 **API Key + config.toml/auth.json** 这条路。
 
 #### Windows
 
@@ -194,7 +192,7 @@ requires_openai_auth = true
 }
 ```
 
-> OpenAI 官方文档还说明：扩展会与 Codex CLI 共用配置，因此模型、审批模式、sandbox 等更底层行为，仍以 `~/.codex/config.toml` 为主。
+如果已有 `config.toml`，不要清空整文件，只确认 `model_provider`、`model` 和 `[model_providers.custom]` 指向目标线路。项目级 `.codex/config.toml` 只有在 Codex 信任该项目后才会加载；私人 Key 仍建议放用户级 `auth.json`。
 
 ### 你在插件里最该先调的 4 个开关
 
@@ -210,7 +208,12 @@ requires_openai_auth = true
 
 1. 保存 `config.toml` 和 `auth.json`。
 2. 完全退出 Codex、编辑器和终端。
-3. 重新打开后先看 `codex login status`。
+3. 重新打开后先看登录状态：
+
+```bash
+codex login status
+```
+
 4. 再发短消息测试，确认模型、Key、线路是否符合预期。
 
 如果改完还是不生效，优先排查：
@@ -218,35 +221,55 @@ requires_openai_auth = true
 - `model_provider` 没指向 `custom`。
 - `auth.json` 放错目录。
 - 旧登录态覆盖了当前 API Key 路线。
+- 项目 `.codex/config.toml` 优先级覆盖了用户级配置。
 - 编辑器扩展仍在读旧进程。
+- Cursor 里 Codex 图标被折叠，你看到的其实不是 Codex 面板。
 
 如果你只想先把 Codex 手动配置跑通，再回编辑器集成，先看：
 
 - [Codex API 手动配置指南](/codex-api-config)
 
-## Cursor 自带设置和扩展配置，不要混成一锅
+## Cline / Roo Code：走 OpenAI Compatible，不走 Claude/Codex 专用配置
 
-很多人把这三件事混在一起：
+Cline 和 Roo Code 的常见接法更直接：它们在扩展设置面板里选择 **OpenAI Compatible** provider，然后填写 Base URL、API Key 和 Model ID。
 
-1. **Cursor 自己的模型/API 设置**。
-2. **Claude Code 装在 Cursor 里**。
-3. **Codex 装在 Cursor 里**。
+> 对这类工具，通常填 `https://www.531288.xyz/v1`，不是 Claude Code 的 `ANTHROPIC_BASE_URL`，也不是 Codex 的 `~/.codex/config.toml`。
 
-它们不是同一层：
+| 工具 | Provider | Base URL | Key | Model | 额外注意 |
+|---|---|---|---|---|---|
+| Cline | OpenAI Compatible | `https://www.531288.xyz/v1` | 账户页面 Key | 账户页面模型名 | 可用设置面板里的 Verify/测试按钮确认连接 |
+| Roo Code | OpenAI Compatible | `https://www.531288.xyz/v1` | 账户页面 Key | 账户页面模型名 | 模型必须支持 OpenAI native tool calling；没有 XML fallback |
 
-- Cursor 自己的 provider 设置，只决定 Cursor 原生 AI 是否走兼容 API。
-- Claude Code 扩展有 VS Code/Cursor 内的 Extension settings；同时也读取与 CLI 共享的 Claude Code settings/env。官方“plugins”管理在 VS Code 里有图形界面，但官方说明它底层使用相同 CLI 命令，和 CLI 不是完全割裂。
-- Codex 扩展读取 Codex 自己的 CLI/IDE 配置；官方文档明确部分行为放在共享 `~/.codex/config.toml`。
-- 你可能在同一个 Cursor 里同时装多个 AI 扩展，但每个扩展的登录态、配置文件、模型来源都可能不同。
+### Cline 简要步骤
 
-所以排错时一定先问自己：
+1. 打开 Cline 设置面板。
+2. API Provider 选择 **OpenAI Compatible**。
+3. Base URL 填 `https://www.531288.xyz/v1`。
+4. API Key 填账户页面生成的 Key。
+5. Model ID 填账户页面展示的模型名。
+6. 点击 Verify 或发送短消息验证。
 
-> 现在出问题的是 Cursor 原生 AI，还是 Claude Code 扩展，还是 Codex 扩展？
+### Roo Code 简要步骤
 
-如果你是在配 Cursor 原生 OpenAI compatible API，可继续看：
+1. 打开 Roo Code 设置面板。
+2. API Provider 选择 **OpenAI Compatible**。
+3. Base URL 填 `https://www.531288.xyz/v1`。
+4. API Key 填账户页面生成的 Key。
+5. Model 选择或输入账户页面模型名。
+6. 如果出现 tool-calling 相关错误，优先换成明确支持 OpenAI native tool calling 的模型。
 
-- [Cursor API 配置入口](/cursor-api-config)
+更详细的步骤看：
+
+- [Cline / Roo Code 配置入口](/cline-roo-code-config)
 - [OpenAI 兼容 API Base URL 总指南](/openai-compatible-api)
+
+## 不要混用的 5 个点
+
+1. **不要用 Cursor 原生 provider 去排 Claude Code / Codex 的错**：先确认你打开的是哪个面板。
+2. **不要把 Claude Code 的 `ANTHROPIC_BASE_URL` 写进 Cline/Roo Code**：Cline/Roo Code 用 OpenAI Compatible provider 表单。
+3. **不要把 Codex 的 `~/.codex/config.toml` 当成全局 AI 插件配置**：它只管 Codex CLI/IDE 配置层级。
+4. **不要把 Base URL 的 `/v1` 到处复制**：Claude/Codex 示例和 Cline/Roo Code 表单可能不同，按当前工具要求填写。
+5. **不要凭教程猜模型名**：模型名以账户页面和当前 provider 实际支持为准；Roo Code 还要确认 tool calling 支持。
 
 ## 常见问题
 
@@ -256,27 +279,45 @@ requires_openai_auth = true
 
 - 当前扩展仍使用旧登录态。
 - 编辑器没有继承你新写入的环境变量。
-- 你改的是 Cursor 原生 API 设置，但实际报错来自 Claude Code / Codex 扩展。
-- 你改的是 Claude Code / Codex 共享配置，但扩展会话还没重启，或编辑器没有继承新环境变量。
+- 你改的是 Cursor 原生 API 设置，但实际报错来自 Claude Code / Codex / Cline / Roo Code。
+- 你改的是 Claude Code / Codex 共享配置，但扩展会话还没重启。
 
 先完全退出编辑器，再重开；Claude Code 场景下可尝试从终端启动编辑器，让它继承环境变量。
 
-### Claude Code 和 Codex 哪个更适合放到 SEO 文档里重点写？
+### Claude Code、Codex、Cline、Roo Code 分别适合什么场景？
 
-都值得写，但切法不同：
-
-- **Claude Code**：更强调 VS Code 图形化工作流、计划审阅、`@文件` 和官方推荐扩展用法。
-- **Codex**：更强调 VS Code/Cursor 通用性、Chat/Agent/Full Access、与 CLI 共用配置、云端任务。
+- **Claude Code**：更强调 Anthropic 官方 IDE/CLI 一体化、计划审阅、`@文件`、Diff 审批、多会话。
+- **Codex**：更强调 OpenAI 官方 IDE/CLI 一体化、Chat/Agent/Full Access、reasoning effort、云端任务。
+- **Cline**：适合想用 OpenAI compatible provider 表单快速接入不同模型的用户。
+- **Roo Code**：适合需要 OpenAI compatible + 原生工具调用工作流的用户，但要确认模型 tool calling 能力。
 
 ### 插件里看到的模型和账户页面不一致怎么办？
 
 先以账户页面和扩展当前 provider 为准。不要凭印象填写 model id，更不要把别家教程里的模型名直接复制过来。
+
+### 我只想配置 Cursor 自带 AI，不想装扩展怎么办？
+
+看 Cursor 原生配置页，不要套用 Claude Code / Codex / Cline / Roo Code 的步骤：
+
+- [Cursor API 配置入口](/cursor-api-config)
+- [OpenAI 兼容 API Base URL 总指南](/openai-compatible-api)
+
+## 参考资料
+
+- Anthropic Claude Code IDE integrations: https://docs.anthropic.com/en/docs/claude-code/ide-integrations
+- Anthropic Claude Code settings: https://docs.anthropic.com/en/docs/claude-code/settings
+- Anthropic Claude Code LLM gateway: https://docs.anthropic.com/en/docs/claude-code/llm-gateway
+- OpenAI Codex IDE extension: https://developers.openai.com/codex/ide
+- OpenAI Codex config basics: https://developers.openai.com/codex/config-basic
+- Cline OpenAI Compatible provider: https://docs.cline.bot/provider-config/openai-compatible
+- Roo Code OpenAI Compatible provider: https://docs.roocode.com/providers/openai-compatible
 
 ## 相关页面
 
 - [Claude Code 中转站手动配置教程](/claude-code-api-proxy)
 - [Codex API 手动配置指南](/codex-api-config)
 - [Cursor API 配置入口](/cursor-api-config)
+- [Cline / Roo Code 配置入口](/cline-roo-code-config)
 - [OpenAI 兼容 API Base URL 总指南](/openai-compatible-api)
 - [429 与余额排查](/troubleshooting-rate-limit)
 - [Model Not Found 排查](/troubleshooting-model-not-found)
