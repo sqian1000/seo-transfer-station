@@ -12,6 +12,9 @@ const site = "https://www.531288.xyz";
 // https://astro.build/config
 export default defineConfig({
   site,
+  server: {
+    allowedHosts: ['docs.531288.xyz']
+  },
   integrations: [
     vue(),
     mdx(),
