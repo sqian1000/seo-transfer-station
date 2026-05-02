@@ -2,11 +2,11 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 
 const paths = [
-  { n: '01', title: '第一次使用', text: '先确认余额/倍率/线路、API Key 和目标客户端，再选择自动导入或手动配置。', href: '#start' },
-  { n: '02', title: 'Claude Code', text: '安装 CLI，写入 settings.json 的 env，重启终端后用测试消息验证。', href: '#claude-code' },
-  { n: '03', title: 'Codex', text: 'config.toml 写模型和 provider，auth.json 写 API Key，避免把 Key 放进项目。', href: '#codex' },
+  { n: '01', title: '第一次使用', text: '先确认余额/倍率/线路、API Key 和目标客户端，再选择自动导入、插件接入或手动配置。', href: '#start' },
+  { n: '02', title: 'Claude Code', text: 'VS Code / Cursor 里优先看插件入口；手动配置则检查 settings.json 的 env 和编辑器重启。', href: '#claude-code' },
+  { n: '03', title: 'Codex', text: 'VS Code / Cursor 扩展与 CLI 共用配置；config.toml 写 provider，auth.json 写 API Key。', href: '#codex' },
   { n: '04', title: 'OpenClaw', text: '按官方结构配置 models.providers、auth.profiles、agents.defaults，并确认 Think 已真正开启。', href: '#openclaw' },
-  { n: '05', title: '配置失败', text: '按 Key、线路、模型、进程重启、JSON/TOML 格式五类排查。', href: '#troubleshooting' },
+  { n: '05', title: '配置失败', text: '按 Key、线路、模型、旧登录态、进程重启、JSON/TOML 格式六类排查。', href: '#troubleshooting' },
 ];
 
 const serviceLinks = [
@@ -24,8 +24,8 @@ const endpointRules = [
 
 const quickSteps = [
   ['读购买需知', '先弄清额度、倍率、线路和要用的客户端。新用户建议小额测试，跑通后再追加。'],
-  ['准备环境', 'Claude Code / Codex 都依赖 Node.js 与 npm。先确认 node -v、npm -v 能正常输出。'],
-  ['导入或手动配置', '能用 ccswitch 就先导入；导入失败时再手动改 Claude Code 或 Codex 配置文件。'],
+  ['选客户端路径', '如果你主要在 VS Code / Cursor 里写代码，优先看插件入口；纯终端再走手动配置。'],
+  ['导入、插件或手动配置', '能用 ccswitch 就先导入；用扩展时再看 VS Code / Cursor 插件说明；都不行再改配置文件。'],
   ['发送测试消息', '只发短消息验证 Key、Base URL、模型、余额和线路，不要一上来跑长任务。'],
 ];
 
@@ -53,9 +53,10 @@ const troubleshooting = [
 ];
 
 const faq = [
-  ['这个站应该承接哪些搜索？', '核心解答 Claude Code 中转站、Codex API 配置、OpenAI compatible base_url、API Key 配置、401/model not found/429 排查等实际使用问题。'],
+  ['这个站应该承接哪些搜索？', '核心解答 Claude Code 中转站、Codex API 配置、VS Code 插件、中转站 Cursor 配置、OpenAI compatible base_url、API Key 配置、401/model not found/429 排查等实际使用问题。'],
   ['为什么统一使用 531288 中转地址？', '本站统一使用 https://www.531288.xyz，便于 Claude Code、Codex 与 OpenAI 兼容客户端直接复制配置。若服务地址后续调整，会在官网同步更新。'],
   ['Claude Code 应该用 ANTHROPIC_API_KEY 还是 ANTHROPIC_AUTH_TOKEN？', '不同版本和接入方式可能读取字段不同。通用文档优先写 settings.json 的 env，并提醒以客户端当前文档和账户页面显示为准；如果已有配置，不要清空整文件，只合并 env 字段。'],
+  ['VS Code / Cursor 装了插件，为什么还是没走中转？', '常见原因是扩展仍在读旧登录态、编辑器没有继承新的环境变量、配置文件改错目录，或者你改的是 Cursor 原生 API 而不是 Claude Code / Codex 插件本身。'],
   ['Codex 的 Key 写在哪里？', '写在用户目录的 ~/.codex/auth.json 或 Windows 用户目录对应文件里，不要写入项目仓库。字段通常是 OPENAI_API_KEY。'],
   ['OpenClaw 怎么配置中转站？', '按官方结构在 models.providers 写 baseUrl、apiKey、api 和模型列表，在 auth.profiles 绑定 provider，在 agents.defaults.model.primary 选择 api-proxy-claude/gpt-5.4。'],
   ['OpenClaw 思考模式怎么开启？', '模型条目先声明 reasoning: true，然后在 UI 选择 Think 档位或使用 /reasoning；只改配置不一定会打开当前会话开关。'],
@@ -68,6 +69,7 @@ const faq = [
 ];
 
 const topicLinks = [
+  ['VS Code / Cursor 插件接入', '/vscode-cursor-plugin-guide', 'Claude Code、Codex、插件安装、登录、中转站、审批模式与排错。'],
   ['Claude Code 手动配置', '/claude-code-api-proxy', 'settings.json、ANTHROPIC_API_KEY、ANTHROPIC_BASE_URL、压缩阈值与排错。'],
   ['Codex 手动配置', '/codex-api-config', 'config.toml、auth.json、model_provider、OPENAI_API_KEY 与验证流程。'],
   ['OpenAI 兼容 API', '/openai-compatible-api', 'base_url、/v1、SDK 迁移、Cursor / Cline / Roo Code 通用配置。'],
@@ -160,7 +162,7 @@ OpenAI / OpenClaw 兼容地址：https://www.531288.xyz/v1
     </section>
 
     <section id="start" class="mx-auto max-w-7xl px-5 py-10 md:px-8 lg:px-12">
-      <div class="mb-8 max-w-3xl"><p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">Start by situation</p><h2 class="mt-3 text-3xl font-black text-white md:text-5xl">按你的情况开始</h2><p class="mt-4 text-slate-400">第一次使用、已有 Key、手动配置、排错都可以从这里进入。</p></div>
+      <div class="mb-8 max-w-3xl"><p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">Start by situation</p><h2 class="mt-3 text-3xl font-black text-white md:text-5xl">按你的情况开始</h2><p class="mt-4 text-slate-400">第一次使用、已有 Key、VS Code / Cursor 插件、手动配置、排错都可以从这里进入。</p></div>
       <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
         {paths.map((item) => (
           <a href={item.href} class="group rounded-[1.7rem] border border-white/10 bg-white/[.055] p-6 no-underline shadow-xl shadow-black/20 transition hover:-translate-y-1 hover:border-cyan-300/60 hover:bg-cyan-300/10">
@@ -195,7 +197,7 @@ OpenAI / OpenClaw 兼容地址：https://www.531288.xyz/v1
 
     <section id="claude-code" class="mx-auto max-w-7xl px-5 py-12 md:px-8 lg:px-12">
       <div class="grid gap-8 lg:grid-cols-[.9fr_1.1fr]">
-        <div><p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">Claude Code</p><h2 class="mt-3 text-3xl font-black text-white md:text-5xl">Claude Code 手动配置</h2><p class="mt-5 leading-8 text-slate-400">当自动导入不可用时，手动修改 settings.json。重点是先备份、只合并 env 字段、不要清空已有配置。</p><div class="mt-6 grid gap-3">{claudeChecks.map(([k, v]) => <div class="rounded-2xl border border-white/10 bg-white/[.045] p-4"><b class="text-white">{k}</b><p class="mt-1 text-sm text-slate-400">{v}</p></div>)}</div></div>
+        <div><p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">Claude Code</p><h2 class="mt-3 text-3xl font-black text-white md:text-5xl">Claude Code 插件 / 手动配置</h2><p class="mt-5 leading-8 text-slate-400">如果你主要在 VS Code / Cursor 里使用 Claude Code，优先看插件入口；自动导入不可用时，再手动修改 settings.json。重点是先备份、只合并 env 字段、不要清空已有配置。</p><div class="mt-6 grid gap-3">{claudeChecks.map(([k, v]) => <div class="rounded-2xl border border-white/10 bg-white/[.045] p-4"><b class="text-white">{k}</b><p class="mt-1 text-sm text-slate-400">{v}</p></div>)}</div><div class="mt-6 grid gap-3"><a href="/vscode-cursor-plugin-guide" class="rounded-2xl border border-cyan-300/30 bg-cyan-300/10 p-4 font-bold text-cyan-100 no-underline hover:bg-cyan-300/15">查看 VS Code / Cursor 插件接入说明 →</a></div></div>
         <div class="rounded-[2rem] border border-cyan-300/20 bg-[#07101f] p-6 shadow-2xl shadow-black/30"><pre class="overflow-auto text-sm leading-7 text-slate-200"><code>{`{
   "env": {
     "ANTHROPIC_API_KEY": "sk-xxxxxxxxxxxxxxxx",
@@ -208,7 +210,7 @@ OpenAI / OpenClaw 兼容地址：https://www.531288.xyz/v1
 
     <section id="codex" class="mx-auto max-w-7xl px-5 py-12 md:px-8 lg:px-12">
       <div class="grid gap-8 lg:grid-cols-[.9fr_1.1fr]">
-        <div><p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">Codex</p><h2 class="mt-3 text-3xl font-black text-white md:text-5xl">Codex 手动配置</h2><p class="mt-5 leading-8 text-slate-400">Codex 通常需要两个文件：config.toml 写 provider、模型和 Base URL；auth.json 写 API Key。Key 不属于项目文件，不能提交。</p><div class="mt-6 grid gap-3">{codexChecks.map(([k, v]) => <div class="rounded-2xl border border-white/10 bg-white/[.045] p-4"><b class="text-white">{k}</b><p class="mt-1 text-sm text-slate-400">{v}</p></div>)}</div></div>
+        <div><p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">Codex</p><h2 class="mt-3 text-3xl font-black text-white md:text-5xl">Codex 插件 / 手动配置</h2><p class="mt-5 leading-8 text-slate-400">Codex 在 VS Code / Cursor 里更常见的入口是 IDE 扩展，且扩展与 CLI 共用配置；需要精确控制 Base URL、provider 和 Key 时，再检查 config.toml 与 auth.json。</p><div class="mt-6 grid gap-3">{codexChecks.map(([k, v]) => <div class="rounded-2xl border border-white/10 bg-white/[.045] p-4"><b class="text-white">{k}</b><p class="mt-1 text-sm text-slate-400">{v}</p></div>)}</div><div class="mt-6 grid gap-3"><a href="/vscode-cursor-plugin-guide" class="rounded-2xl border border-cyan-300/30 bg-cyan-300/10 p-4 font-bold text-cyan-100 no-underline hover:bg-cyan-300/15">查看 VS Code / Cursor 插件接入说明 →</a></div></div>
         <div class="rounded-[2rem] border border-cyan-300/20 bg-[#07101f] p-6 shadow-2xl shadow-black/30"><pre class="overflow-auto text-sm leading-7 text-slate-200"><code>{`# ~/.codex/config.toml
 model_provider = "custom"
 model = "gpt-5.4"

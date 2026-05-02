@@ -1,20 +1,93 @@
 ---
-title: Cursor API 配置入口
-description: Cursor 自定义 API、OpenAI compatible base_url、API Key、模型名和 AI API 中转站配置入口说明。
+title: Cursor API 配置与插件入口
+description: Cursor 原生自定义 API、Claude Code 插件、Codex 插件三条路线怎么区分，base_url、API Key 与排错入口说明。
 tags:
   - docs-seo
   - productivity
+  - technical-seo
 ---
 
-# Cursor API 配置入口
+# Cursor API 配置与插件入口
 
-Cursor 是否可用自定义 API，取决于当前客户端版本和 provider 设置。配置前先确认是否支持 OpenAI compatible Base URL。
+Cursor 场景最容易踩坑的地方，不是不会填 Base URL，而是**把 Cursor 自己的配置、Claude Code 插件、Codex 插件混成一件事**。
 
-## 检查项
+先记住一句话：
 
-- `base_url` 使用 `https://www.531288.xyz/v1`。
-- API Key 来自账户页面。
-- 模型名使用账户页面展示值。
-- 出现 401、404、429 时回到首页排错矩阵。
+> 你在 Cursor 里能用的 AI，不一定都走同一套 Key、同一套 provider、同一套配置文件。
 
-[回到首页](/)
+## 先分清 3 条路线
+
+| 你现在要配什么 | 应该看哪条路 | 核心配置 |
+|---|---|---|
+| Cursor 自带 AI 走兼容 API | Cursor 原生 provider 设置 | `base_url` / API Key / 模型名 |
+| 在 Cursor 里使用 Claude Code 扩展 | Claude Code 插件路线 | `~/.claude/settings.json` |
+| 在 Cursor 里使用 Codex 扩展 | Codex 插件路线 | `~/.codex/config.toml` + `~/.codex/auth.json` |
+
+## 路线一：Cursor 原生自定义 API
+
+如果你不打算额外装插件，只想让 Cursor 自己走中转站，优先确认这几个点：
+
+- `base_url` 使用 `https://www.531288.xyz/v1`
+- API Key 使用账户页面生成值
+- 模型名以账户页面展示为准
+- 遇到 401、404、429 时，先查 Key、路径、模型和余额，不要先卸载重装
+
+这条路线本质上属于 OpenAI compatible API，用法可继续看：
+
+- [OpenAI 兼容 API Base URL 总指南](/openai-compatible-api)
+
+## 路线二：在 Cursor 里用 Claude Code 插件
+
+Claude Code 官方文档已经提供 Cursor 扩展安装入口。它更像是把 Claude Code 的 VS Code 工作流直接搬进 Cursor：
+
+- 图形化聊天面板
+- 计划审阅与 Diff 审批
+- `@文件` / `@目录` 引用
+- 多会话
+- CLI 与 IDE 联动
+
+如果你要让它走中转站，重点看：
+
+- [VS Code / Cursor 插件接入 AI API 中转站指南](/vscode-cursor-plugin-guide)
+- [Claude Code 中转站手动配置教程](/claude-code-api-proxy)
+
+## 路线三：在 Cursor 里用 Codex 插件
+
+Codex 官方文档明确说明 IDE 扩展支持 Cursor，但 Cursor 的 Activity Bar 默认可能是横向布局，所以插件图标有时会被折叠。常见处理顺序是：
+
+1. 先确认已安装 Codex 扩展。
+2. 如果没看到图标，检查 Activity Bar 是否折叠。
+3. 必要时临时改成竖向布局。
+4. 把 Codex 拖到右侧边栏。
+
+如果你要让它走中转站，重点看：
+
+- [VS Code / Cursor 插件接入 AI API 中转站指南](/vscode-cursor-plugin-guide)
+- [Codex API 手动配置指南](/codex-api-config)
+
+## 最常见的 4 类误判
+
+| 现象 | 实际问题 | 先查什么 |
+|---|---|---|
+| Cursor 能用，但 Claude Code 插件报未登录 | 插件自己的登录态或环境变量没更新 | `~/.claude/settings.json`、编辑器重启 |
+| Codex 插件还在走默认模型 | `model_provider` 没切到 custom 或旧登录态覆盖 | `~/.codex/config.toml`、`auth.json` |
+| 改了 Cursor base_url，但插件没变化 | 你改的是 Cursor 原生 AI，不是插件 | 当前到底是哪一个面板在报错 |
+| 所有东西都失败 | 可能是统一 Key、统一线路或余额问题 | 先查 Key、账户、余额、公告 |
+
+## 结论
+
+如果你是来找“Cursor 怎么走中转站”的，先别急着问一个问题。先拆成这三个：
+
+1. 我现在用的是 Cursor 原生 AI，还是插件？
+2. 插件是 Claude Code，还是 Codex？
+3. 当前报错属于 Key、Base URL、模型名，还是旧进程/旧登录态？
+
+把这三个问题拆清，排错速度会快很多。
+
+## 相关页面
+
+- [VS Code / Cursor 插件接入 AI API 中转站指南](/vscode-cursor-plugin-guide)
+- [Claude Code 中转站手动配置教程](/claude-code-api-proxy)
+- [Codex API 手动配置指南](/codex-api-config)
+- [OpenAI 兼容 API Base URL 总指南](/openai-compatible-api)
+- [429 与余额排查](/troubleshooting-rate-limit)

@@ -1,0 +1,265 @@
+---
+title: VS Code / Cursor 插件接入 AI API 中转站指南
+description: Claude Code 与 Codex 在 VS Code、Cursor 中如何安装、登录、走中转站、切换模型、设置审批模式与排错。
+tags:
+  - docs-seo
+  - technical-seo
+  - productivity
+---
+
+# VS Code / Cursor 插件接入 AI API 中转站指南
+
+如果你现在主要在 VS Code 或 Cursor 里写代码，优先看的不是纯 CLI 文档，而是**插件接入路径**。目前更值得优先关注的两条路线是：
+
+1. **Claude Code 扩展**：官方文档已经把它作为 VS Code 中的推荐用法，支持图形化对话、计划审阅、Diff 审批、`@文件` 引用和多会话。
+2. **Codex 扩展**：OpenAI 官方说明它可直接运行在 VS Code、Cursor、Windsurf 等 VS Code 兼容编辑器里，并与 Codex CLI 共用配置。
+
+如果你要让插件走 AI API 中转站，核心仍然只有三件事：**Key、Base URL、模型名**。
+
+## 先看你属于哪种用法
+
+| 场景 | 推荐路线 | 你要改哪里 |
+|---|---|---|
+| 想在 VS Code / Cursor 里用 Claude Code 面板 | Claude Code 扩展 | 扩展安装 + `~/.claude/settings.json` |
+| 想在 VS Code / Cursor 里用 Codex 面板 | Codex 扩展 | 扩展安装 + `~/.codex/config.toml` + `~/.codex/auth.json` |
+| 不想额外装插件，只想让 Cursor 自己走中转 | Cursor 原生自定义 API | Cursor 自己的 provider / base URL 设置 |
+| 需要 OpenAI 兼容 SDK、Cline、Roo Code 共用一套兼容入口 | OpenAI compatible 路线 | `https://www.531288.xyz/v1` |
+
+## 统一准备项
+
+开始前先准备好：
+
+- **API Key**：从账户页面复制。
+- **Base URL**：本文统一写 `https://www.531288.xyz`。
+- **OpenAI 兼容地址**：常用为 `https://www.531288.xyz/v1`。
+- **模型名**：只用账户页面展示值，不猜官方 model id。
+
+> 经验上，真正最容易出错的不是安装扩展，而是**编辑器还在读旧进程、旧配置或旧登录态**。改完配置后，最好完全退出编辑器和终端再重开。
+
+## Claude Code：VS Code / Cursor 插件怎么接中转站
+
+### 官方资料里值得先知道的点
+
+根据 Claude Code 官方 VS Code 文档：
+
+- VS Code 扩展是官方推荐用法。
+- 可以直接安装到 **VS Code** 和 **Cursor**。
+- 扩展支持 Spark 图标入口、Activity Bar、状态栏入口。
+- 支持 `@文件/目录` 引用、选区带行号引用、Plan 模式、自动接受改动、多会话。
+- 如果编辑器没有继承 shell 环境变量，官方建议从终端用 `code .` 启动，或执行 **Developer: Reload Window**。
+
+另外，Claude Code 官方 changelog 已明确：当 `ANTHROPIC_BASE_URL` 指向 **Anthropic-compatible gateway** 时，`/model` 选择器会读取网关的 `/v1/models`。
+
+这意味着：**如果你的中转站实现了兼容网关能力，Claude Code 新版对网关模型列表的适配已经更完整。**
+
+### 安装步骤
+
+1. 在 VS Code / Cursor 的扩展市场搜索 **Claude Code**。
+2. 安装后，打开编辑器右上角 Spark 图标或左侧 Activity Bar。
+3. 如果是第一次打开，会先看到登录或初始化界面。
+
+### 让 Claude Code 走中转站
+
+如果你走手动配置路线，优先检查 `settings.json`：
+
+#### Windows
+
+```text
+%USERPROFILE%\.claude\settings.json
+```
+
+#### macOS / Linux
+
+```text
+~/.claude/settings.json
+```
+
+推荐最小示例：
+
+```json
+{
+  "env": {
+    "ANTHROPIC_API_KEY": "sk-xxxxxxxxxxxxxxxx",
+    "ANTHROPIC_BASE_URL": "https://www.531288.xyz",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "78"
+  }
+}
+```
+
+### 验证是否真的走了中转
+
+1. 保存配置。
+2. 完全退出 Claude Code、编辑器和终端。
+3. 重新打开编辑器。
+4. 发一条短消息，例如：
+
+```text
+请回复“配置已生效”。
+```
+
+如果你在扩展里仍然看到默认登录逻辑、模型列表不对或提示未登录，优先排查这几项：
+
+- 编辑器没有继承新的环境变量。
+- 旧终端或旧扩展进程还在。
+- 改错了用户目录下的 `settings.json`。
+- 当前是账号登录态，和你想要的 Key / gateway 路线不一致。
+
+### Claude Code 插件适合谁
+
+更适合：
+
+- 想在编辑器里直接看 Diff 和审批。
+- 想保留 `@文件`、Plan 审阅、多会话工作流。
+- 想把 CLI 和 IDE 工作流放在一套工具里。
+
+如果你只想要最稳定、最可控的中转站手动配置，先看：
+
+- [Claude Code 中转站手动配置教程](/claude-code-api-proxy)
+
+## Codex：VS Code / Cursor 插件怎么接中转站
+
+### 官方资料里值得先知道的点
+
+根据 OpenAI 官方 Codex IDE 文档：
+
+- Codex IDE 扩展支持 **VS Code、Cursor、Windsurf** 等 VS Code 兼容编辑器。
+- 默认会出现在编辑器侧边栏。
+- 在 **Cursor** 中，Activity Bar 可能是横向布局，图标会被折叠；官方建议临时改成竖向后，把 Codex 拖到右侧边栏。
+- Codex 扩展与 **Codex CLI 共用配置**。
+- 扩展里可切换 **Chat / Agent / Agent (Full Access)**、模型和 reasoning effort。
+- 支持 `@文件` 引用、云端任务委派、云端任务回放和继续本地收尾。
+
+### 安装步骤
+
+1. 在 VS Code / Cursor 搜索并安装 **Codex**（扩展 ID 为 `openai.chatgpt`）。
+2. 打开侧边栏里的 Codex 面板。
+3. 若在 Cursor 中没看到面板，先检查图标是否被折叠；必要时临时把 Activity Bar 改成竖向，再把 Codex 拖到右侧边栏。
+
+### 登录方式
+
+官方支持两种主路线：
+
+- 用 **ChatGPT 账号**登录。
+- 用 **API Key** 路线。
+
+如果你要明确控制中转站、模型和 provider，通常更建议走 **API Key + config.toml** 这条路。
+
+### 让 Codex 走中转站
+
+#### Windows
+
+```text
+%USERPROFILE%\.codex\config.toml
+%USERPROFILE%\.codex\auth.json
+```
+
+#### macOS / Linux
+
+```text
+~/.codex/config.toml
+~/.codex/auth.json
+```
+
+最小示例：
+
+```toml
+model_provider = "custom"
+model = "gpt-5.4"
+
+[model_providers.custom]
+name = "custom"
+base_url = "https://www.531288.xyz"
+wire_api = "responses"
+requires_openai_auth = true
+```
+
+```json
+{
+  "OPENAI_API_KEY": "sk-xxxxxxxxxxxxxxxx"
+}
+```
+
+> OpenAI 官方文档还说明：扩展会与 Codex CLI 共用配置，因此模型、审批模式、sandbox 等更底层行为，仍以 `~/.codex/config.toml` 为主。
+
+### 你在插件里最该先调的 4 个开关
+
+1. **Model**：选择账户页面可用的模型名。
+2. **Reasoning effort**：先用 `medium`，复杂任务再升高。
+3. **Approval mode**：
+   - Chat：只聊天、先规划。
+   - Agent：默认模式，可读文件、改文件、运行工作目录内命令。
+   - Agent (Full Access)：放得更开，风险也更高。
+4. **Cloud delegation**：长任务可丢到云端跑，回头再本地接力。
+
+### 验证是否真的走了中转
+
+1. 保存 `config.toml` 和 `auth.json`。
+2. 完全退出 Codex、编辑器和终端。
+3. 重新打开后先看 `codex login status`。
+4. 再发短消息测试，确认模型、Key、线路是否符合预期。
+
+如果改完还是不生效，优先排查：
+
+- `model_provider` 没指向 `custom`。
+- `auth.json` 放错目录。
+- 旧登录态覆盖了当前 API Key 路线。
+- 编辑器扩展仍在读旧进程。
+
+如果你只想先把 Codex 手动配置跑通，再回编辑器集成，先看：
+
+- [Codex API 手动配置指南](/codex-api-config)
+
+## Cursor 自带设置和插件，不要混成一锅
+
+很多人把这三件事混在一起：
+
+1. **Cursor 自己的模型/API 设置**。
+2. **Claude Code 装在 Cursor 里**。
+3. **Codex 装在 Cursor 里**。
+
+它们不是同一层：
+
+- Cursor 自己的 provider 设置，决定 Cursor 原生 AI 是否走兼容 API。
+- Claude Code / Codex 插件，是各自独立的扩展工作流。
+- 你可能在同一个 Cursor 里同时装多个 AI 扩展，但每个扩展的登录态、配置文件、模型来源都可能不同。
+
+所以排错时一定先问自己：
+
+> 现在出问题的是 Cursor 原生 AI，还是 Claude Code 扩展，还是 Codex 扩展？
+
+如果你是在配 Cursor 原生 OpenAI compatible API，可继续看：
+
+- [Cursor API 配置入口](/cursor-api-config)
+- [OpenAI 兼容 API Base URL 总指南](/openai-compatible-api)
+
+## 常见问题
+
+### VS Code / Cursor 里装好插件后，为什么还是走默认账号？
+
+通常是因为：
+
+- 当前扩展仍使用旧登录态。
+- 编辑器没有继承你新写入的环境变量。
+- 你改的是 CLI 配置，但扩展会话还没重启。
+
+先完全退出编辑器，再重开；Claude Code 场景下可尝试从终端启动编辑器，让它继承环境变量。
+
+### Claude Code 和 Codex 哪个更适合放到 SEO 文档里重点写？
+
+都值得写，但切法不同：
+
+- **Claude Code**：更强调 VS Code 图形化工作流、计划审阅、`@文件` 和官方推荐扩展用法。
+- **Codex**：更强调 VS Code/Cursor 通用性、Chat/Agent/Full Access、与 CLI 共用配置、云端任务。
+
+### 插件里看到的模型和账户页面不一致怎么办？
+
+先以账户页面和扩展当前 provider 为准。不要凭印象填写 model id，更不要把别家教程里的模型名直接复制过来。
+
+## 相关页面
+
+- [Claude Code 中转站手动配置教程](/claude-code-api-proxy)
+- [Codex API 手动配置指南](/codex-api-config)
+- [Cursor API 配置入口](/cursor-api-config)
+- [OpenAI 兼容 API Base URL 总指南](/openai-compatible-api)
+- [429 与余额排查](/troubleshooting-rate-limit)
+- [Model Not Found 排查](/troubleshooting-model-not-found)
