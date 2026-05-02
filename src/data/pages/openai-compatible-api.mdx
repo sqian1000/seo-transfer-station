@@ -46,6 +46,18 @@ const res = await client.chat.completions.create({
 4. Model 使用账户页面模型列表展示值。
 5. 出现 401、404、429 时，不要先重装客户端，先检查 Key、路径、模型名和余额。
 
+## OpenClaw 配置入口
+
+OpenClaw 不只需要 `baseUrl` 和 `apiKey`，还要按官方结构配置 `models.providers`、`auth.profiles` 和 `agents.defaults`。
+
+最小判断规则：
+
+- 中转站支持 `/v1/responses`：使用 `api: "openai-responses"`。
+- 只支持 `/v1/chat/completions`：使用 `api: "openai-completions"`。
+- 要开启思考模式：模型条目加 `reasoning: true`，然后在 UI 或 `/reasoning` 打开当前会话 Think 档位。
+
+完整示例见：[OpenClaw API 中转站配置指南](/openclaw-api-config)。
+
 ## 排错优先级
 
 1. **401**：Key、Header、Bearer Token 或字段名。
@@ -65,5 +77,6 @@ const res = await client.chat.completions.create({
 
 - [回到首页](/)
 - [Codex API 配置](/codex-api-config)
+- [OpenClaw API 中转站配置](/openclaw-api-config)
 - [API Key 安全清单](/api-key-safety-checklist)
 - [Model Not Found 排查](/troubleshooting-model-not-found)

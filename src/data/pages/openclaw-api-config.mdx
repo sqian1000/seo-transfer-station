@@ -1,0 +1,215 @@
+---
+title: OpenClaw API 中转站配置指南
+description: OpenClaw 配置 AI API 中转站的方法：models.providers、auth.profiles、agents.defaults、openai-responses / openai-completions、reasoning 思考模式与验证步骤。
+tags:
+  - docs-seo
+  - technical-seo
+---
+
+# OpenClaw API 中转站配置指南
+
+OpenClaw 可以通过自定义 `models.providers` 接入 AI API 中转站。新版本配置应按官方结构拆成三层：
+
+1. `models.providers`：声明中转站地址、API Key、协议适配器和模型列表。
+2. `auth.profiles`：把 provider 绑定到 API Key 鉴权模式。
+3. `agents.defaults`：选择默认模型，并给模型设置别名、流式输出等会话偏好。
+
+> 不要把真实 API Key 写进公开仓库、截图或聊天记录。下面统一使用 `sk-xxxxxxxxxxxxxxxx` 占位。
+
+## 适合谁看
+
+- 想把 OpenClaw 接入 AI API 中转站。
+- 旧版 3 月配置仍在使用过时结构，需要对齐当前官方配置。
+- 想在 OpenClaw 中启用 `openai-responses` 和思考模式。
+- 需要同时理解 `openai-responses` 与 `openai-completions` 的区别。
+
+## 推荐配置文件位置
+
+OpenClaw 本地网关常见配置文件：
+
+```text
+~/.openclaw/openclaw.json
+```
+
+如果你使用控制台或部署脚本生成配置，优先以实际环境的 OpenClaw 配置路径为准。修改前建议先备份：
+
+```bash
+cp ~/.openclaw/openclaw.json ~/.openclaw/openclaw.json.bak
+```
+
+## 完整示例配置
+
+下面示例使用本站统一中转地址。OpenAI 兼容 / Responses 通常使用 `/v1` 入口：
+
+```json
+{
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "api-proxy-claude": {
+        "baseUrl": "https://www.531288.xyz/v1",
+        "apiKey": "sk-xxxxxxxxxxxxxxxx",
+        "api": "openai-responses",
+        "authHeader": true,
+        "headers": {
+          "User-Agent": "Mozilla/5.0"
+        },
+        "models": [
+          {
+            "id": "gpt-5.4",
+            "name": "gpt-5.4",
+            "api": "openai-responses",
+            "reasoning": true,
+            "input": ["text"],
+            "contextWindow": 200000,
+            "maxTokens": 8192,
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            }
+          }
+        ]
+      }
+    }
+  },
+  "auth": {
+    "profiles": {
+      "api-proxy-claude:default": {
+        "provider": "api-proxy-claude",
+        "mode": "api_key"
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "api-proxy-claude/gpt-5.4"
+      },
+      "models": {
+        "api-proxy-claude/gpt-5.4": {
+          "alias": "gpt-5.4",
+          "streaming": true
+        }
+      }
+    }
+  }
+}
+```
+
+如果你的中转站只支持 `/v1/chat/completions`，把 provider 和 model 两处 `api` 都改成：
+
+```json
+"api": "openai-completions"
+```
+
+如果中转站支持 `/v1/responses`，优先使用：
+
+```json
+"api": "openai-responses"
+```
+
+## `openai-responses` 和 `openai-completions` 怎么选
+
+| 选项 | 请求接口 | 适合场景 |
+|---|---|---|
+| `openai-responses` | `/v1/responses` | 新版 OpenAI Responses 兼容接口、思考模型、原生 Responses 能力 |
+| `openai-completions` | `/v1/chat/completions` | vLLM、SGLang、LiteLLM、旧版 OpenAI compatible 代理 |
+
+简单判断：
+
+- 配置后能正常回复，优先保留 `openai-responses`。
+- 如果出现 404、unsupported endpoint、字段不兼容，再切回 `openai-completions`。
+- 不确定时，先问中转站控制台或客服：是否支持 `/v1/responses`。
+
+## 开启 OpenClaw 思考模式
+
+OpenClaw 的思考模式通常需要两层同时满足：
+
+1. **模型能力层**：模型条目里声明 `"reasoning": true`。
+2. **会话开关层**：在 UI 中选择 Think 档位，或在会话里用 `/reasoning` 切换。
+
+配置层示例：
+
+```json
+{
+  "id": "gpt-5.4",
+  "name": "gpt-5.4",
+  "api": "openai-responses",
+  "reasoning": true,
+  "contextWindow": 200000,
+  "maxTokens": 8192
+}
+```
+
+配置保存并重启 OpenClaw 后，进入当前会话检查状态：
+
+```text
+/status
+```
+
+目标是看到类似：
+
+```text
+Think: medium
+```
+
+如果仍然是：
+
+```text
+Think: off
+```
+
+说明模型已声明支持 reasoning，但当前会话的思考开关还没打开。此时在 UI 里重新选择思考档位，或发送 `/reasoning` 后再检查。
+
+## 应用配置后的验证步骤
+
+1. 重启或重载 OpenClaw Gateway。
+2. 打开 OpenClaw 会话，发送短测试消息：
+
+```text
+请回复“配置已生效”。
+```
+
+3. 查看状态：
+
+```text
+/status
+```
+
+重点确认：
+
+- Model 是否显示为 `api-proxy-claude/gpt-5.4`。
+- Think 是否为目标档位，而不是 `off`。
+- Context Window 是否接近配置的 `200000`。
+- 没有 401、404、429 或 timeout 报错。
+
+## 常见问题
+
+### 配置后还是走旧模型
+
+通常是 `agents.defaults.model.primary` 没改，或者已有会话还保留旧模型状态。新开一个会话或重新选择模型后再测。
+
+### `reasoning: true` 后 Think 还是 off
+
+`reasoning: true` 只是声明模型支持思考；实际是否启用，还要看当前会话的 Think 开关。需要在 UI 或 `/reasoning` 里打开。
+
+### 401 Unauthorized
+
+API Key 错、复制多了空格、Key 已过期，或 provider 绑定的 `auth.profiles` 不一致。重新复制 Key，并确认 `api-proxy-claude:default.provider` 指向 `api-proxy-claude`。
+
+### model not found
+
+模型 id 要和中转站账户页面展示一致。配置里 provider 内部写 `"id": "gpt-5.4"`，使用时写完整模型引用：`api-proxy-claude/gpt-5.4`。
+
+### Responses 不通怎么办
+
+把 provider 和 model 两处 `api` 从 `openai-responses` 改成 `openai-completions`，再重启验证。如果 completions 正常，说明当前中转站暂时只兼容 `/v1/chat/completions`。
+
+## 相关页面
+
+- [回到 AI API 中转站首页](/)
+- [OpenAI 兼容 API Base URL 总指南](/openai-compatible-api)
+- [Codex API 配置](/codex-api-config)
+- [Model Not Found 排查](/troubleshooting-model-not-found)

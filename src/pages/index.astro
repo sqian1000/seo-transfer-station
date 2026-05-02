@@ -5,7 +5,8 @@ const paths = [
   { n: '01', title: '第一次使用', text: '先确认余额/倍率/线路、API Key 和目标客户端，再选择自动导入或手动配置。', href: '#start' },
   { n: '02', title: 'Claude Code', text: '安装 CLI，写入 settings.json 的 env，重启终端后用测试消息验证。', href: '#claude-code' },
   { n: '03', title: 'Codex', text: 'config.toml 写模型和 provider，auth.json 写 API Key，避免把 Key 放进项目。', href: '#codex' },
-  { n: '04', title: '配置失败', text: '按 Key、线路、模型、进程重启、JSON/TOML 格式五类排查。', href: '#troubleshooting' },
+  { n: '04', title: 'OpenClaw', text: '按官方结构配置 models.providers、auth.profiles、agents.defaults，并开启 reasoning。', href: '#openclaw' },
+  { n: '05', title: '配置失败', text: '按 Key、线路、模型、进程重启、JSON/TOML 格式五类排查。', href: '#troubleshooting' },
 ];
 
 const serviceLinks = [
@@ -16,7 +17,7 @@ const serviceLinks = [
 
 const endpointRules = [
   ['API Key', '在账户页面生成或查看，示例统一写成 sk-xxxxxxxx。不要写进公开仓库、截图、README 或聊天记录。'],
-  ['Base URL', '客户端统一填写 https://www.531288.xyz；OpenAI 兼容 SDK 通常使用 https://www.531288.xyz/v1。'],
+  ['Base URL', '客户端统一填写 https://www.531288.xyz；OpenAI 兼容 SDK 和 OpenClaw 通常使用 https://www.531288.xyz/v1。'],
   ['模型名', '以账户页面展示为准，不猜测官方 model id。Claude Code 和 Codex 的字段名不同。'],
   ['验证方式', '配置后完全关闭工具和终端，重开后发送“请回复配置已生效”。'],
 ];
@@ -56,6 +57,8 @@ const faq = [
   ['为什么统一使用 531288 中转地址？', '本站统一使用 https://www.531288.xyz，便于 Claude Code、Codex 与 OpenAI 兼容客户端直接复制配置。若服务地址后续调整，会在官网同步更新。'],
   ['Claude Code 应该用 ANTHROPIC_API_KEY 还是 ANTHROPIC_AUTH_TOKEN？', '不同版本和接入方式可能读取字段不同。通用文档优先写 settings.json 的 env，并提醒以客户端当前文档和账户页面显示为准；如果已有配置，不要清空整文件，只合并 env 字段。'],
   ['Codex 的 Key 写在哪里？', '写在用户目录的 ~/.codex/auth.json 或 Windows 用户目录对应文件里，不要写入项目仓库。字段通常是 OPENAI_API_KEY。'],
+  ['OpenClaw 怎么配置中转站？', '按官方结构在 models.providers 写 baseUrl、apiKey、api 和模型列表，在 auth.profiles 绑定 provider，在 agents.defaults.model.primary 选择 api-proxy-claude/gpt-5.4。'],
+  ['OpenClaw 思考模式怎么开启？', '模型条目先声明 reasoning: true，然后在 UI 选择 Think 档位或使用 /reasoning；只改配置不一定会打开当前会话开关。'],
   ['ccswitch 导入后为什么没生效？', '常见原因是浏览器没拉起 ccswitch、导入的是旧 Key、工具进程没完全退出，或 Claude Code / Codex 实际读取了另一个配置文件。'],
   ['缓存和压缩会影响费用吗？', '会。长对话可能触发压缩，旧缓存失效后下一次请求费用可能升高。推荐把长期项目规则写进 CLAUDE.md 或 AGENTS.md。'],
   ['为什么有时显示的模型和我选的不一样？', '客户端可能对标题、辅助任务或轻量步骤使用不同模型。正式任务仍应按主模型策略与账户记录判断。'],
@@ -68,6 +71,7 @@ const topicLinks = [
   ['Claude Code 手动配置', '/claude-code-api-proxy', 'settings.json、ANTHROPIC_API_KEY、ANTHROPIC_BASE_URL、压缩阈值与排错。'],
   ['Codex 手动配置', '/codex-api-config', 'config.toml、auth.json、model_provider、OPENAI_API_KEY 与验证流程。'],
   ['OpenAI 兼容 API', '/openai-compatible-api', 'base_url、/v1、SDK 迁移、Cursor / Cline / Roo Code 通用配置。'],
+  ['OpenClaw 中转站配置', '/openclaw-api-config', 'models.providers、auth.profiles、agents.defaults、Responses 和思考模式。'],
   ['API Key 安全清单', '/api-key-safety-checklist', 'Key 分组、预算、日志、敏感数据和团队权限。'],
   ['Model Not Found 排查', '/troubleshooting-model-not-found', '模型名、provider、路径、账户权限和上游状态。'],
   ['429 与余额排查', '/troubleshooting-rate-limit', '并发、余额、RPM/TPM、上游限流和退避重试。'],
@@ -100,6 +104,7 @@ const jsonLd = {
           <a class="border-0 text-slate-300 no-underline hover:text-cyan-200" href="#start">开始</a>
           <a class="border-0 text-slate-300 no-underline hover:text-cyan-200" href="#claude-code">Claude Code</a>
           <a class="border-0 text-slate-300 no-underline hover:text-cyan-200" href="#codex">Codex</a>
+          <a class="border-0 text-slate-300 no-underline hover:text-cyan-200" href="#openclaw">OpenClaw</a>
           <a class="border-0 text-slate-300 no-underline hover:text-cyan-200" href="#faq">FAQ</a>
         </div>
         <a href="#quickstart" class="rounded-full border-0 bg-cyan-300 px-4 py-2 text-sm font-bold text-slate-950 no-underline shadow-lg shadow-cyan-400/20">看配置示例</a>
@@ -133,7 +138,7 @@ const jsonLd = {
               ))}
             </div>
             <pre class="mt-4 overflow-auto rounded-3xl border border-white/10 bg-black/35 p-4 text-xs leading-6 text-cyan-100"><code>Base URL：https://www.531288.xyz
-OpenAI 兼容地址：https://www.531288.xyz/v1
+OpenAI / OpenClaw 兼容地址：https://www.531288.xyz/v1
 示例 Key：sk-xxxxxxxxxxxxxxxx
 验证消息：请回复“配置已生效”</code></pre>
           </div>
@@ -218,6 +223,39 @@ requires_openai_auth = true
 {
   "OPENAI_API_KEY": "sk-xxxxxxxxxxxxxxxx"
 }`}</code></pre><p class="mt-4 text-sm leading-6 text-slate-400">验证：重开终端后执行 codex login status，再进入 codex 发送测试消息。</p></div>
+      </div>
+    </section>
+
+    <section id="openclaw" class="mx-auto max-w-7xl px-5 py-12 md:px-8 lg:px-12">
+      <div class="grid gap-8 lg:grid-cols-[.9fr_1.1fr]">
+        <div><p class="text-sm font-bold uppercase tracking-[.25em] text-cyan-300">OpenClaw</p><h2 class="mt-3 text-3xl font-black text-white md:text-5xl">OpenClaw 中转站与思考模式配置</h2><p class="mt-5 leading-8 text-slate-400">OpenClaw 新版配置建议按官方结构拆分：models.providers 定义中转站，auth.profiles 绑定 API Key，agents.defaults 选择默认模型。若中转站支持 /v1/responses，优先使用 openai-responses；只支持 /v1/chat/completions 时再用 openai-completions。</p><div class="mt-6 grid gap-3"><div class="rounded-2xl border border-white/10 bg-white/[.045] p-4"><b class="text-white">思考模式</b><p class="mt-1 text-sm text-slate-400">模型条目声明 reasoning: true 后，还要在 UI 选择 Think 档位或使用 /reasoning，/status 看到 Think: medium 才算当前会话已开启。</p></div><a href="/openclaw-api-config" class="rounded-2xl border border-cyan-300/30 bg-cyan-300/10 p-4 font-bold text-cyan-100 no-underline hover:bg-cyan-300/15">查看完整 OpenClaw 配置指南 →</a></div></div>
+        <div class="rounded-[2rem] border border-cyan-300/20 bg-[#07101f] p-6 shadow-2xl shadow-black/30"><p class="mb-4 rounded-2xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm leading-6 text-amber-100">以下为首页节选，用于说明 provider 与默认模型写法；完整可复制配置请查看 <a href="/openclaw-api-config" class="font-bold text-amber-50 underline underline-offset-4">OpenClaw 配置指南</a>。</p><pre class="overflow-auto text-sm leading-7 text-slate-200"><code>{`{
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "api-proxy-claude": {
+        "baseUrl": "https://www.531288.xyz/v1",
+        "apiKey": "sk-xxxxxxxxxxxxxxxx",
+        "api": "openai-responses",
+        "models": [
+          {
+            "id": "gpt-5.4",
+            "name": "gpt-5.4",
+            "api": "openai-responses",
+            "reasoning": true,
+            "contextWindow": 200000,
+            "maxTokens": 8192
+          }
+        ]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": { "primary": "api-proxy-claude/gpt-5.4" }
+    }
+  }
+}`}</code></pre><p class="mt-4 text-sm leading-6 text-slate-400">此代码块是节选，不建议直接复制到生产配置；完整可复制配置见 /openclaw-api-config。真实 Key 请使用占位替换，不要公开。</p></div>
       </div>
     </section>
 
