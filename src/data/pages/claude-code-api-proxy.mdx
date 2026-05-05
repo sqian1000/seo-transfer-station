@@ -1,6 +1,6 @@
 ---
 title: Claude Code 中转站手动配置教程
-description: Claude Code 中转站手动配置说明：settings.json 路径、ANTHROPIC_API_KEY、ANTHROPIC_BASE_URL、压缩阈值、验证步骤与常见错误排查。
+description: Claude Code 中转站手动配置说明：settings.json 路径、ANTHROPIC_BASE_URL、ANTHROPIC_AUTH_TOKEN、配置优先级、/model 排查与常见错误处理。
 tags:
   - docs-seo
   - technical-seo
@@ -12,25 +12,41 @@ tags:
 
 - [VS Code / Cursor 插件接入 AI API 中转站指南](/vscode-cursor-plugin-guide)
 
-当自动安装、扩展接管或 ccswitch 导入不可用时，再使用手动配置。手动配置的核心是修改 Claude Code 的 `settings.json`，把 API Key 和 Base URL 写到 `env` 里。
+当自动安装、扩展接管或 ccswitch 导入不可用时，再使用手动配置。手动配置的核心，是确认 Claude Code 实际读取了哪一层设置，并把 API Key、Base URL 和模型选择放到正确位置。
 
-> 先备份，再修改。文件里已有内容时，不要整文件清空，只把需要的字段合并进去。
+> 先备份，再修改。文件里已有内容时，不要整文件清空，只合并需要的字段。
 
 ## 适合谁看
 
-- ccswitch 保存了，但 Claude Code 不生效。
-- 想确认 Claude Code 到底读取了哪个 Key 和 Base URL。
-- 需要手动调整上下文压缩阈值。
+- 配了 `ANTHROPIC_BASE_URL`，Claude Code 还是要求登录或仍走默认线路。
+- 想确认 Claude Code 到底读取了哪个 Key、Base URL 和模型。
+- `/model` 看不到目标模型，或出现 `model not found`。
+- 想知道 `settings.local.json`、项目配置和用户配置谁优先。
 
 ## 你需要准备
 
 | 信息 | 从哪里拿 | 示例 |
 |---|---|---|
-| API Key | 账户页面 | `sk-xxxxxxxxxxxxxxxx` |
-| Base URL | 本站统一地址 | `https://www.531288.xyz` |
+| API Key | 控制台或账户页面 | `sk-xxxxxxxxxxxxxxxx` |
+| Base URL | 业务侧确认后的 API 域名 | `https://YOUR_API_DOMAIN/anthropic` |
+| 模型名 | 控制台模型列表 | `控制台显示的模型名` |
 | 压缩阈值 | 自行决定 | `78` 或 `80` |
 
-本站统一使用 `https://www.531288.xyz`。如果服务地址后续调整，会在官网同步更新。
+本文继续使用 `YOUR_API_DOMAIN` 占位。不要把示例域名当成真实线路地址。
+
+## Claude Code 配置优先级
+
+Claude Code 常见排错点不是“有没有填”，而是“填在哪一层”。官方文档的常见优先级可以先按下面理解：
+
+| 优先级 | 位置 | 适合场景 | 常见坑 |
+|---|---|---|---|
+| Managed | 团队或受管配置 | 团队统一策略 | 个人改了本地配置但被上层覆盖 |
+| CLI 参数 | 启动参数 | 临时切模型或 provider | 关掉当前会话后失效 |
+| Local | `.claude/settings.local.json` | 当前仓库临时调试 | 只在当前项目生效 |
+| Project | `.claude/settings.json` | 项目级共享约定 | 容易和 Local 冲突 |
+| User | `~/.claude/settings.json` | 用户默认值 | 经常以为改了这里就能覆盖全部 |
+
+如果你在项目目录、用户目录、插件环境里都改过，先判断到底是谁在最后生效，再继续排错。
 
 ## 找到 settings.json
 
@@ -52,32 +68,74 @@ Finder 可按 `Cmd + Shift + G`，输入 `~/.claude`。
 
 如果没有 `.claude` 文件夹，可以先启动一次 Claude Code，或者手动创建文件夹和 `settings.json`。
 
-## 写入配置
+## 写入最小配置
 
-如果 `settings.json` 是空文件或不存在，可以写成：
+如果 `settings.json` 是空文件或不存在，可以先写最小可验证版本：
 
 ```json
 {
   "env": {
-    "ANTHROPIC_API_KEY": "sk-xxxxxxxxxxxxxxxx",
-    "ANTHROPIC_BASE_URL": "https://www.531288.xyz",
+    "ANTHROPIC_BASE_URL": "https://YOUR_API_DOMAIN/anthropic",
+    "ANTHROPIC_AUTH_TOKEN": "sk-your-api-key",
+    "ANTHROPIC_MODEL": "控制台显示的模型名",
     "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "78"
   }
 }
 ```
 
-如果文件里已有其他配置，只合并 `env` 字段：
+如果文件里已有其他配置，只合并 `env` 字段，不要抹掉已有内容：
 
 ```json
 {
   "env": {
     "已有配置": "保留",
-    "ANTHROPIC_API_KEY": "sk-xxxxxxxxxxxxxxxx",
-    "ANTHROPIC_BASE_URL": "https://www.531288.xyz",
-    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "78"
+    "ANTHROPIC_BASE_URL": "https://YOUR_API_DOMAIN/anthropic",
+    "ANTHROPIC_AUTH_TOKEN": "sk-your-api-key",
+    "ANTHROPIC_MODEL": "控制台显示的模型名"
   }
 }
 ```
+
+## `ANTHROPIC_BASE_URL` 配了但不生效怎么办？
+
+优先按下面顺序查，而不是一上来就重装客户端。
+
+| 检查项 | 你要看什么 | 常见问题 |
+|---|---|---|
+| `ANTHROPIC_BASE_URL` | 是否写成 `https://YOUR_API_DOMAIN/anthropic` | 少了协议、路径写错、IDE 里没继承新变量 |
+| `ANTHROPIC_AUTH_TOKEN` | 是否与当前线路匹配 | Key 复制不完整、粘贴了旧 Key |
+| `ANTHROPIC_API_KEY` | 是否也被设置过 | 有时会和 `ANTHROPIC_AUTH_TOKEN` 形成混淆 |
+| shell profile | `.zshrc` / `.bashrc` / PowerShell profile | 改了文件但没 reload |
+| IDE 终端继承 | VS Code / Cursor 内置终端 | 外部终端生效，IDE 内置终端没生效 |
+| 项目级配置 | `.claude/settings.local.json` / `.claude/settings.json` | 项目内配置把用户级设置覆盖了 |
+
+### 最小验证步骤
+
+1. 先关闭 Claude Code、IDE 和当前终端。
+2. 重新打开终端，确认环境变量已经重新加载。
+3. 启动 `claude`。
+4. 运行 `/status`，看当前 provider、Base URL、模型和认证方式是否符合预期。
+5. 发送一个最小 prompt，例如：
+
+```text
+请只回复“配置已生效”。
+```
+
+如果 `/status` 仍显示旧线路或默认配置，优先排查配置层级，不要先怀疑模型本身。
+
+## `/model` 看不到模型怎么办？
+
+Claude Code 中常见的问题不是“模型不存在”，而是“当前层级没选中正确模型”。
+
+| 检查项 | 说明 |
+|---|---|
+| `/model` 当前显示 | 先看会话里当前实际选择了什么 |
+| 启动参数 | 某些临时启动参数会覆盖默认设置 |
+| `ANTHROPIC_MODEL` | 环境变量里是否写了旧模型名 |
+| settings 中的 `model` | 项目级或用户级设置是否覆盖 |
+| provider allowlist | 线路本身是否只开放了部分模型 |
+
+建议先把模型改成控制台里明确展示的那个，再发送短 prompt 验证。如果报 `model not found`，继续看：[Model Not Found 排查](/troubleshooting-model-not-found)。
 
 ## 保存并验证
 
@@ -85,22 +143,19 @@ Finder 可按 `Cmd + Shift + G`，输入 `~/.claude`。
 2. 完全关闭 Claude Code 和当前终端。
 3. 重新打开终端。
 4. 执行 `claude`。
-5. 发送测试消息：
+5. 先用 `/status` 看当前配置，再发送测试消息。
 
-```text
-请回复“配置已生效”。
-```
-
-能收到回复就完成。如果提示认证失败，优先检查 Key；如果提示连接失败，优先检查 Base URL 和网络。
+能正常收到回复，就说明当前配置层级和认证已经生效。
 
 ## 排错清单
 
 | 现象 | 可能原因 | 处理方式 |
 |---|---|---|
-| Unauthorized / 认证失败 | Key 错了或多了空格 | 重新复制 API Key |
-| Connection Error / 连接失败 | Base URL 错或网络不可用 | 确认地址为 `https://www.531288.xyz`，URL 末尾不要乱加 `/` |
-| 保存后没变化 | 改错文件 | 确认路径是 `.claude/settings.json` |
-| 设置不生效 | 旧进程还在 | 完全退出 Claude Code 和终端 |
+| 仍然要求登录 | 仍在走默认 provider，或项目级配置覆盖了用户级配置 | 先看 `/status`，再逐层排查 Local / Project / User |
+| Unauthorized / 401 | Key 错了或多了空格 | 重新复制 API Key，必要时轮换新 Key |
+| `model not found` | 模型名不对或当前线路没开放 | 改用控制台展示的模型名，并检查权限 |
+| Connection Error / 连接失败 | Base URL 错或网络不可用 | 确认地址仍是 `https://YOUR_API_DOMAIN/anthropic` |
+| 保存后没变化 | 改错文件或旧终端仍在 | 确认路径，彻底退出后重开 |
 | JSON 报错 | 少逗号或多逗号 | 用 JSON 校验工具检查格式 |
 
 ## 和上下文压缩的关系
@@ -119,5 +174,8 @@ Finder 可按 `Cmd + Shift + G`，输入 `~/.claude`。
 ## 相关页面
 
 - [回到 AI API 中转站首页](/)
-- [Codex 手动配置](/codex-api-config)
+- [Codex API 手动配置](/codex-api-config)
+- [OpenAI 兼容 API Base URL 总指南](/openai-compatible-api)
+- [401 Invalid Key 排查](/troubleshooting-401-invalid-key)
+- [Model Not Found 排查](/troubleshooting-model-not-found)
 - [API Key 安全清单](/api-key-safety-checklist)

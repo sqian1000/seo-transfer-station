@@ -1,6 +1,6 @@
 ---
 title: OpenAI 兼容 API Base URL 总指南
-description: OpenAI 兼容 API 中转站配置总指南：base_url、/v1 路径、Bearer Token、模型名、Cursor、Cline、Roo Code、Codex 和 SDK 迁移排查。
+description: OpenAI 兼容 API 中转站配置总指南：base_url、/v1 路径、客户端差异表、Codex、Claude Code、Cline、Roo、Cursor、SDK 与常见错误排查。
 tags:
   - technical-seo
   - templates
@@ -8,19 +8,34 @@ tags:
 
 # OpenAI 兼容 API Base URL 总指南
 
-OpenAI compatible API 的核心，是让客户端把请求发到自定义 `base_url`，并继续使用 Bearer Token、`model` 字段和兼容协议。Codex、Cursor、Cline、Roo Code 和很多 SDK 都属于这一类接入场景。
+OpenAI compatible API 的核心，是让客户端把请求发到自定义 `base_url`，并继续使用 Bearer Token、`model` 字段和兼容协议。Codex、Cursor、Cline、Roo Code、LiteLLM、LM Studio 和很多 SDK 都属于这一类接入场景。
+
+先说重点：**`/v1` 很常见，但不是所有客户端都完全一样，也不是所有 provider 都接受同一种路径和 wire API。**
 
 ## 通用字段
 
 | 字段 | 说明 |
 |---|---|
-| `base_url` / `openai_base_url` | 示例：`https://www.531288.xyz/v1` 或账户页面显示的兼容入口 |
-| `OPENAI_API_KEY` | 账户页面生成的 API Key |
-| `model` | 以账户页面展示为准，不猜测官方 model id |
+| `base_url` / `openai_base_url` | 常见写法：`https://YOUR_API_DOMAIN/v1` |
+| `OPENAI_API_KEY` | 控制台生成的 API Key |
+| `model` | 以控制台展示为准，不猜测官方 model id |
 | `timeout` | 建议生产环境显式设置超时 |
 | `retry` | 对 429、5xx 设置有限次数的退避重试 |
 
-本文统一使用自有中转地址 `https://www.531288.xyz`。OpenAI 兼容 SDK 通常填写 `https://www.531288.xyz/v1`。
+本文继续使用 `YOUR_API_DOMAIN` 占位，避免把示例误写成真实线路。
+
+## `/v1` 客户端差异表
+
+| 客户端 / 工具 | 主要字段 | 常见写法 | `/v1` 习惯 | 最小验证 | 常见坑 |
+|---|---|---|---|---|---|
+| Claude Code | `ANTHROPIC_BASE_URL` | `https://YOUR_API_DOMAIN/anthropic` | 通常不是 OpenAI 风格 `/v1` | `/status` + 短 prompt | 误把 Claude Code 当成纯 OpenAI client |
+| Codex | `openai_base_url` 或 `[model_providers.<id>].base_url` | `https://YOUR_API_DOMAIN/v1` | 常见要带 `/v1` | 看当前 provider / model，再发短 prompt | `wire_api` 选错、provider 覆盖 |
+| Cline | OpenAI compatible provider 配置 | `https://YOUR_API_DOMAIN/v1` | 常见要带 `/v1` | 发最小请求 | provider 选错、模型不支持工具调用 |
+| Roo Code | OpenAI compatible provider 配置 | `https://YOUR_API_DOMAIN/v1` | 常见要带 `/v1` | 发短任务验证 | 模型本身不支持 native tool calling |
+| Cursor | Custom OpenAI URL | `https://YOUR_API_DOMAIN/v1` | 多数兼容配置会带 `/v1` | 连接测试 + 短 prompt | URL 对了但模型开关或 Key 不匹配 |
+| OpenAI SDK | `baseURL` / `base_url` | `https://YOUR_API_DOMAIN/v1` | 通常带 `/v1` | 跑最小 SDK 请求 | 路径里多拼具体 endpoint |
+| LiteLLM | `api_base` | `https://YOUR_API_DOMAIN/v1` | 常见带 `/v1`，但不要拼完整 endpoint | 最小 completion/request | 把 `/v1/chat/completions` 整段写进 base |
+| LM Studio | OpenAI compatible server URL | 以服务端暴露的兼容入口为准 | 常见有 `/v1` | 本地请求验证 | 把本地 server 端口和代理地址混用 |
 
 ## 最小 SDK 示例
 
@@ -29,42 +44,54 @@ import OpenAI from "openai";
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  baseURL: "https://www.531288.xyz/v1",
+  baseURL: "https://YOUR_API_DOMAIN/v1",
 });
 
 const res = await client.chat.completions.create({
-  model: "账户页面展示的模型名",
+  model: "控制台显示的模型名",
   messages: [{ role: "user", content: "请回复配置已生效" }],
 });
 ```
 
+## `/v1` 到底要不要带？
+
+不要一刀切回答，先按下面判断：
+
+1. **客户端字段名是什么？**
+   - Codex 常见是 `openai_base_url` 或 provider `base_url`。
+   - SDK 常见是 `baseURL` / `base_url`。
+2. **服务方兼容的是哪一层？**
+   - 如果文档明确写 OpenAI compatible root 为 `.../v1`，就带。
+   - 如果文档给的是特定 provider 路径，例如 Claude 风格 `.../anthropic`，就不要硬加 `/v1`。
+3. **你写的是 base，还是完整 endpoint？**
+   - 大多数客户端需要的是 base，不要把 `/chat/completions`、`/responses` 直接拼进去。
+
+## Claude Code、Codex 和通用 OpenAI 兼容接口的区别
+
+| 场景 | 更像哪种接口 | 备注 |
+|---|---|---|
+| Claude Code | Anthropic 风格 | 常见字段是 `ANTHROPIC_BASE_URL`、`ANTHROPIC_AUTH_TOKEN` |
+| Codex | OpenAI compatible | 常见字段是 `openai_base_url`、`model_provider`、`wire_api` |
+| Cursor / Cline / Roo / SDK | OpenAI compatible | 多数情况下围绕 `base_url`、API Key、model |
+
+所以很多用户卡在“我明明填了 `YOUR_API_DOMAIN`，为什么 Claude Code 不认、Codex 却能认”。原因通常不是线路坏了，而是两个客户端本来就不是同一套字段。
+
 ## Cursor / Cline / Roo Code 通用检查
 
 1. Provider 选择 OpenAI compatible 或自定义兼容接口。
-2. Base URL 填`https://www.531288.xyz/v1`。
+2. Base URL 按文档要求填写，常见为 `https://YOUR_API_DOMAIN/v1`。
 3. API Key 使用当前项目 Key，不复用高权限主 Key。
-4. Model 使用账户页面模型列表展示值。
+4. Model 使用控制台模型列表展示值。
 5. 出现 401、404、429 时，不要先重装客户端，先检查 Key、路径、模型名和余额。
-
-## OpenClaw 配置入口
-
-OpenClaw 不只需要 `baseUrl` 和 `apiKey`，还要按官方结构配置 `models.providers`、`auth.profiles` 和 `agents.defaults`。
-
-最小判断规则：
-
-- 中转站支持 `/v1/responses`：使用 `api: "openai-responses"`。
-- 只支持 `/v1/chat/completions`：使用 `api: "openai-completions"`。
-- 要开启思考模式：模型条目加 `reasoning: true`，然后在 UI 或 `/reasoning` 打开当前会话 Think 档位。
-
-完整示例见：[OpenClaw API 中转站配置指南](/openclaw-api-config)。
 
 ## 排错优先级
 
 1. **401**：Key、Header、Bearer Token 或字段名。
 2. **404 / model not found**：模型名、provider、路径或权限。
-3. **429**：并发、余额、速率限制或上游限流。
-4. **timeout**：本地网络、线路波动、代理冲突或客户端超时过短。
-5. **配置无变化**：旧进程仍在，或客户端读取了另一个配置文件。
+3. **404 / endpoint not found**：把完整 endpoint 写进了 base，或接口风格不匹配。
+4. **429**：并发、余额、速率限制或上游限流。
+5. **timeout**：本地网络、线路波动、代理冲突或客户端超时过短。
+6. **配置无变化**：旧进程仍在，或客户端读取了另一个配置文件。
 
 ## 生产环境建议
 
@@ -76,7 +103,11 @@ OpenClaw 不只需要 `baseUrl` 和 `apiKey`，还要按官方结构配置 `mode
 ## 相关页面
 
 - [回到首页](/)
-- [Codex API 配置](/codex-api-config)
-- [OpenClaw API 中转站配置](/openclaw-api-config)
+- [Claude Code 手动配置](/claude-code-api-proxy)
+- [Codex API 手动配置](/codex-api-config)
+- [Cline / Roo Code 配置入口](/cline-roo-code-config)
+- [Cursor API 配置入口](/cursor-api-config)
 - [API Key 安全清单](/api-key-safety-checklist)
+- [401 Invalid Key 排查](/troubleshooting-401-invalid-key)
 - [Model Not Found 排查](/troubleshooting-model-not-found)
+- [429 Rate Limit 与余额排查](/troubleshooting-rate-limit)

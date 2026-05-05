@@ -1,6 +1,6 @@
 ---
 title: Codex API 手动配置指南
-description: Codex API 中转站手动配置指南：config.toml、auth.json、model_provider、base_url、OPENAI_API_KEY、验证步骤与排错清单。
+description: Codex API 中转站手动配置指南：config.toml 字段决策树、openai_base_url、model_providers、wire_api、项目级覆盖与验证步骤。
 tags:
   - docs-seo
   - technical-seo
@@ -12,25 +12,27 @@ tags:
 
 - [VS Code / Cursor 插件接入 AI API 中转站指南](/vscode-cursor-plugin-guide)
 
-当自动安装、扩展登录态或 ccswitch 导入不可用时，再手动配置 Codex。Codex 通常需要改两个文件：`config.toml` 写 Base URL 和模型提供商，`auth.json` 写 API Key。
+当自动安装、扩展登录态或 ccswitch 导入不可用时，再手动配置 Codex。Codex 的常见难点不是“文件在哪”，而是：到底该用 `openai_base_url`，还是该新建 `[model_providers.<id>]`；到底要不要改 `wire_api`；用户级和项目级配置谁覆盖谁。
 
 > 不要把 API Key 写进公开项目。Key 只放在你自己的用户目录，不能提交到 GitHub、README、截图或聊天记录。
 
 ## 适合谁看
 
-- ccswitch 配置 Codex 后仍然走默认配置。
-- 想检查 Codex 的 `config.toml` 和 `auth.json`。
-- 需要手动切换模型提供商或 Base URL。
+- Codex 配了第三方 API 后仍然走默认配置。
+- 想检查 `~/.codex/config.toml` 和项目内 `.codex/config.toml` 到底谁生效。
+- 不确定该用 `openai_base_url` 还是自定义 `model_providers`。
+- 想判断 `wire_api = "responses"` 还是 `"chat"` 更合适。
 
 ## 你需要准备
 
 | 信息 | 从哪里拿 | 示例 |
 |---|---|---|
-| API Key | 账户页面 | `sk-xxxxxxxxxxxxxxxx` |
-| Base URL | 本站统一地址 | `https://www.531288.xyz` |
-| 模型名 | 账户页面模型列表 | `gpt-5.4` |
+| API Key | 控制台或账户页面 | `sk-xxxxxxxxxxxxxxxx` |
+| Base URL | 业务侧确认后的兼容入口 | `https://YOUR_API_DOMAIN/v1` |
+| 模型名 | 控制台模型列表 | `控制台显示的 OpenAI compatible model id` |
+| Provider ID | 自定义命名 | `custom` |
 
-本站统一使用 `https://www.531288.xyz`。如果服务地址后续调整，会在官网同步更新。
+本文继续使用 `YOUR_API_DOMAIN` 占位，不写真实线路域名。
 
 ## 找到 Codex 配置目录
 
@@ -38,82 +40,138 @@ tags:
 
 ```text
 %USERPROFILE%\.codex\config.toml
-%USERPROFILE%\.codex\auth.json
 ```
 
 ### macOS / Linux
 
 ```text
 ~/.codex/config.toml
-~/.codex/auth.json
 ```
 
 如果目录不存在，可以先启动一次 Codex，或者手动创建。
 
-## 修改 config.toml
+## 先看字段决策树
 
-打开 `config.toml`，写入或合并：
+### 1) 只是把内置 OpenAI provider 指向代理或兼容网关
+
+优先用：`openai_base_url`
+
+```toml
+model = "控制台显示的 OpenAI compatible model id"
+openai_base_url = "https://YOUR_API_DOMAIN/v1"
+```
+
+适合场景：
+
+- 你仍然走 OpenAI compatible 语义；
+- 只是把请求改到代理、路由器或数据驻留入口；
+- 不想额外维护自定义 provider 名称。
+
+### 2) 你要新增第三方 provider，而不是复用内置 OpenAI provider
+
+优先用：`[model_providers.<id>]`
 
 ```toml
 model_provider = "custom"
-model = "gpt-5.4"
+model = "控制台显示的 OpenAI compatible model id"
 
 [model_providers.custom]
 name = "custom"
-base_url = "https://www.531288.xyz"
+base_url = "https://YOUR_API_DOMAIN/v1"
+env_key = "OPENAI_API_KEY"
 wire_api = "responses"
-requires_openai_auth = true
 ```
 
-如果已经有其他 Codex 配置，不要清空整文件，只确认 `model_provider`、`model` 和 `[model_providers.custom]` 这几项符合目标线路。
+适合场景：
 
-## 修改 auth.json
+- 想显式区分多个 provider；
+- 需要不同环境或线路分别切换；
+- 后续要配多个 profile 或 provider。
 
-打开同目录下的 `auth.json`，写入你的 API Key：
+### 3) 你需要临时切换 provider
 
-```json
-{
-  "OPENAI_API_KEY": "sk-xxxxxxxxxxxxxxxx"
-}
+优先检查：
+
+- `model_provider = "..."`
+- profile 覆盖
+- `--provider` 启动参数
+
+如果 CLI 参数指定了 provider，它可能覆盖你在 `config.toml` 里的默认设置。
+
+### 4) 不确定 `wire_api` 该写什么
+
+先按兼容能力判断：
+
+| 场景 | 建议 |
+|---|---|
+| 兼容 `/v1/responses` | `wire_api = "responses"` |
+| 只兼容 Chat Completions 风格 | `wire_api = "chat"` |
+| 不确定 | 先看服务方文档或最小请求结果，不要瞎猜 |
+
+`/v1` 不等于一定支持所有 OpenAI 风格端点，`wire_api` 选错时常见报错是 404、请求体字段不匹配或响应结构异常。
+
+## 最小 TOML 示例
+
+### 方案 A：只改内置 OpenAI provider
+
+```toml
+model = "控制台显示的 OpenAI compatible model id"
+openai_base_url = "https://YOUR_API_DOMAIN/v1"
 ```
 
-这里的 `OPENAI_API_KEY` 是 `auth.json` 里的字段名，不是让你把 Key 写进项目环境变量文件。
+### 方案 B：新增自定义 provider
 
-## 保存并验证
+```toml
+model_provider = "custom"
+model = "控制台显示的 OpenAI compatible model id"
 
-完全关闭 Codex 和终端后重新打开，执行：
-
-```bash
-codex login status
+[model_providers.custom]
+name = "custom"
+base_url = "https://YOUR_API_DOMAIN/v1"
+env_key = "OPENAI_API_KEY"
+wire_api = "responses"
 ```
 
-如果看到已经使用 API Key 登录，再执行：
+## 用户级、项目级和 trusted project
 
-```bash
-codex
-```
+Codex 常见冲突不是语法问题，而是“你改了 A 文件，实际运行读的是 B 文件”。
 
-进入 Codex 后发送：
+| 位置 | 作用 | 常见问题 |
+|---|---|---|
+| `~/.codex/config.toml` | 用户级默认配置 | 大多数情况下先从这里开始 |
+| `.codex/config.toml` | 项目级配置 | 通常只在 trusted project 下生效 |
+| profile | 同一 provider 的多套策略 | 容易覆盖默认 model/provider |
+| CLI 参数 | 本次运行临时覆盖 | 关闭当前会话后失效 |
 
-```text
-请回复“配置已生效”。
-```
+如果你在项目里也放了 `.codex/config.toml`，记得确认当前项目是否已 trusted，否则你会以为项目级配置没生效，其实是根本没被读取。
 
-能正常回复，就说明 Codex 已经接入中转站。
+## 验证步骤
 
-## 排错清单
+1. 确认 `config.toml` 已保存。
+2. 确认 API Key 已按当前 provider 方式提供。
+3. 完全关闭 Codex 和当前终端。
+4. 重新打开终端。
+5. 启动 Codex，先看当前 provider / model 是否符合预期。
+6. 发送一个短 prompt，只验证配置是否生效，不要一上来就跑长任务。
+
+## 常见冲突排查
 
 | 现象 | 可能原因 | 处理方式 |
 |---|---|---|
-| 仍然走默认配置 | `config.toml` 路径写错或 `model_provider` 没指向 custom | 确认文件在用户目录 `.codex` 下 |
-| 鉴权失败 / 401 | `auth.json` 路径写错或 Key 错 | 重新生成或复制 API Key |
-| 连接失败 | Base URL 错或网络不可用 | 确认 Base URL 为 `https://www.531288.xyz` |
-| TOML 报错 | `config.toml` 格式不合法 | 检查引号、空行和表头 |
-| JSON 报错 | `auth.json` 格式不合法 | 检查双引号、逗号和花括号 |
-| 改完没反应 | 旧终端或旧 Codex 进程仍在 | 完全关闭后重新打开 |
+| 仍然走默认配置 | 实际读的不是你改的那个文件 | 先确认是用户级还是项目级配置生效 |
+| 401 / invalid key | Key 错、过期或 provider 使用的 `env_key` 不匹配 | 重新检查 Key 来源与字段名 |
+| 404 / model not found | 模型名不对、provider 不对，或 `/v1` 路径错误 | 先换成控制台展示模型，再看 provider 和路径 |
+| 404 / endpoint not found | `wire_api` 选错 | 在 `responses` 与 `chat` 间按兼容能力重查 |
+| 改完没反应 | 旧终端、旧 profile 或 `--provider` 覆盖 | 清理临时覆盖项后再测 |
+| TOML 报错 | 引号、表头、缩进或重复字段问题 | 用 TOML 校验器检查 |
+
+如果报 `model not found`，继续看：[Model Not Found 排查](/troubleshooting-model-not-found)。如果是 429 或额度问题，看：[429 Rate Limit 与余额排查](/troubleshooting-rate-limit)。
 
 ## 相关页面
 
 - [回到 AI API 中转站首页](/)
 - [Claude Code 手动配置](/claude-code-api-proxy)
+- [OpenAI 兼容 API Base URL 总指南](/openai-compatible-api)
+- [Cline / Roo Code 配置入口](/cline-roo-code-config)
+- [Cursor API 配置入口](/cursor-api-config)
 - [429 与余额排查](/troubleshooting-rate-limit)
