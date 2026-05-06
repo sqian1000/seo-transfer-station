@@ -2,9 +2,9 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   server: {
-    allowedHosts: ['docs.531288.xyz']
+    allowedHosts: ['docs.aigcwuji.com']
   },
   preview: {
-    allowedHosts: ['docs.531288.xyz']
+    allowedHosts: ['docs.aigcwuji.com']
   }
 });

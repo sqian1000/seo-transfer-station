@@ -46,7 +46,7 @@ cp ~/.openclaw/openclaw.json ~/.openclaw/openclaw.json.bak
 
 1. 已安装 OpenClaw，且能正常打开会话。
 2. 已拿到可用 API Key。
-3. 中转站兼容入口确认是 `https://www.531288.xyz/v1`。
+3. 中转站兼容入口确认是 `https://www.aigcwuji.com/v1`。
 4. 模型名以账户页面展示为准，不自己猜 model id。
 5. 知道怎么验证：至少会用 `/status`、`openclaw doctor`、新开会话复测。
 
@@ -98,7 +98,7 @@ openclaw doctor
     mode: "merge",
     providers: {
       "api-proxy-claude": {
-        baseUrl: "https://www.531288.xyz/v1",
+        baseUrl: "https://www.aigcwuji.com/v1",
         apiKey: "sk-xxxxxxxxxxxxxxxx",
         api: "openai-responses",
         authHeader: true,
@@ -142,7 +142,7 @@ openclaw doctor
 
 ### 这份最小配置里最容易错的 4 个点
 
-1. `baseUrl` 要写兼容入口，通常是 `https://www.531288.xyz/v1`，不是根域名。
+1. `baseUrl` 要写兼容入口，通常是 `https://www.aigcwuji.com/v1`，不是根域名。
 2. `id` 是 **provider 内部模型 id**，例如 `gpt-5.4`。
 3. 真正选择模型时要写完整引用：`api-proxy-claude/gpt-5.4`。
 4. 自定义 OpenAI 兼容 provider 如果省略 `api`，OpenClaw 默认按 `openai-completions` 处理；只有上游明确支持 `/v1/responses` 时才用 `openai-responses`。

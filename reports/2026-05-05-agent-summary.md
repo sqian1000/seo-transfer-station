@@ -65,7 +65,7 @@ QA 复核通过项：
 - 三篇目标页无 `noindex`。
 - 目标 MDX 与目标 dist 页无 `undefined.png`。
 - 目标 MDX 未命中绝对承诺词。
-- 目标 MDX 中 URL 仅保留 `YOUR_API_DOMAIN` 占位；`https://www.531288.xyz` 仅来自站点 canonical/nav/OG 模板，不属于 API 示例泄露。
+- 目标 MDX 中 URL 仅保留 `YOUR_API_DOMAIN` 占位；`https://www.aigcwuji.com` 仅来自站点 canonical/nav/OG 模板，不属于 API 示例泄露。
 - 三篇 MDX 均覆盖今日要求的内容点。
 
 ## 5. 超时 / 未 QA / Guardrail 检查

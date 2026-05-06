@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /go/
 
-Sitemap: https://www.531288.xyz/sitemap-index.xml
+Sitemap: https://www.aigcwuji.com/sitemap-index.xml

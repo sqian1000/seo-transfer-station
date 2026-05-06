@@ -7,13 +7,13 @@ import sitemap from '@astrojs/sitemap';
 import { ViteToml } from 'vite-plugin-toml';
 import tailwindcss from '@tailwindcss/vite';
 
-const site = "https://www.531288.xyz";
+const site = "https://www.aigcwuji.com";
 
 // https://astro.build/config
 export default defineConfig({
   site,
   server: {
-    allowedHosts: ['docs.531288.xyz']
+    allowedHosts: ['docs.aigcwuji.com']
   },
   integrations: [
     vue(),
@@ -26,10 +26,10 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss(), ViteToml()],
     server: {
-      allowedHosts: ['docs.531288.xyz']
+      allowedHosts: ['docs.aigcwuji.com']
     },
     preview: {
-      allowedHosts: ['docs.531288.xyz']
+      allowedHosts: ['docs.aigcwuji.com']
     }
   },
   env: {
