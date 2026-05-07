@@ -1,6 +1,6 @@
 ---
 title: Cline / Roo Code 配置入口
-description: Cline、Roo Code 等 AI 编程工具接入 OpenAI 兼容 API 中转站的 Base URL、API Key、model、验证和排错步骤。
+description: Cline、Roo Code 等 AI 编程工具接入 OpenAI 兼容 API 中转站的 Base URL、API Key、Model ID、连接测试矩阵与 tool calling 验证。
 tags:
   - docs-seo
   - productivity
@@ -15,9 +15,18 @@ Cline、Roo Code 这类 VS Code / Cursor 扩展通常不读取 Claude Code 的 `
 | 字段 | 推荐值 | 说明 |
 |---|---|---|
 | Provider / API Provider | `OpenAI Compatible` | 不选官方 OpenAI 专用项，除非你明确要直连官方 OpenAI |
-| Base URL | `https://www.aigcwuji.com/v1` | OpenAI 兼容接口通常带 `/v1` |
-| API Key | 账户页面生成的项目 Key | 不要提交到 Git、截图或公开文档 |
-| Model / Model ID | 账户页面展示的 model id | 不猜模型名，不复制其他平台教程里的名称 |
+| Base URL | `https://YOUR_API_DOMAIN/v1` | OpenAI 兼容接口常见带 `/v1` |
+| API Key | 控制台生成的项目 Key | 不要提交到 Git、截图或公开文档 |
+| Model / Model ID | 控制台展示的 model id | 不猜模型名，不复制别的平台教程里的名称 |
+
+## Cline / Roo 连接测试矩阵
+
+| 工具 | Provider | Base URL | Model ID | 最小验证 prompt | 失败时下一跳 |
+|---|---|---|---|---|---|
+| Cline | OpenAI Compatible | `https://YOUR_API_DOMAIN/v1` | 控制台展示 model id | `请只回复“Cline 配置已生效”` | [401](/troubleshooting-401-invalid-key) / [429](/troubleshooting-rate-limit) |
+| Roo Code | OpenAI Compatible | `https://YOUR_API_DOMAIN/v1` | 明确支持 tool calling 的 model id | `请读取当前目录并说明你看到了什么` | [Model Not Found](/troubleshooting-model-not-found) / tool calling 验证 |
+
+这张表的重点不是“字段长得一样”，而是 **Roo Code 对模型能力要求更高**：能聊天，不等于能跑工具。
 
 ## Cline 配置步骤
 
@@ -27,18 +36,16 @@ Cline、Roo Code 这类 VS Code / Cursor 扩展通常不读取 Claude Code 的 `
 4. Base URL 填：
 
 ```text
-https://www.aigcwuji.com/v1
+https://YOUR_API_DOMAIN/v1
 ```
 
-5. API Key 填账户页面生成的 Key。
-6. Model / Model ID 填账户页面展示的模型名。
+5. API Key 填控制台生成的 Key。
+6. Model / Model ID 填控制台展示的模型名。
 7. 点击 Verify / 测试连接；如果没有按钮，就发送一句短消息：
 
 ```text
-请回复“配置已生效”。
+请回复“Cline 配置已生效”。
 ```
-
-Cline 官方 OpenAI Compatible 文档强调，这个 provider 需要填 Base URL、API Key、Model ID；Base URL 不是 `https://api.openai.com/v1`，而是你所选兼容服务商提供的地址。
 
 ## Roo Code 配置步骤
 
@@ -48,14 +55,46 @@ Cline 官方 OpenAI Compatible 文档强调，这个 provider 需要填 Base URL
 4. Base URL 填：
 
 ```text
-https://www.aigcwuji.com/v1
+https://YOUR_API_DOMAIN/v1
 ```
 
-5. API Key 填账户页面生成的 Key。
-6. Model 选择或输入账户页面展示的模型名。
-7. 发送短消息验证；如果出现工具调用错误，先换一个明确支持 tool calling 的模型。
+5. API Key 填控制台生成的 Key。
+6. Model 选择或输入控制台展示的模型名。
+7. 先发送短消息验证，再做工具调用验证。
 
-Roo Code 官方文档特别说明：Roo Code 只使用 OpenAI native tool calling，没有 XML fallback。因此模型不仅要能聊天，还要支持 OpenAI-compatible function/tool calling；否则会出现工具调用失败、无法读写文件或任务中断。
+## Roo native tool calling：必须单独验证
+
+Roo Code 官方文档强调，它使用 OpenAI native tool calling。也就是说：
+
+- 模型能普通聊天，**不代表** Roo Code 就一定能正常工作；
+- 兼容接口看起来像 OpenAI，**不代表** tool calling 已完整实现；
+- 只有在真实工具动作里通过，才能说明这条线路适合 Roo Code。
+
+### 推荐验证顺序
+
+1. **聊天验证**：
+
+```text
+请只回复“Roo 聊天已生效”。
+```
+
+2. **轻量工具验证**：
+
+```text
+请读取当前工作区的顶层目录，并告诉我你看到了哪些文件夹。
+```
+
+3. **约束型工具验证**：
+
+```text
+请不要修改任何文件，只列出你打算如何检查 package.json 和 src 目录。
+```
+
+如果第 1 步通过、第 2 或第 3 步失败，优先怀疑：
+
+- 当前模型不支持 OpenAI native tool calling；
+- 兼容接口没有完整实现工具调用；
+- 你填的是能聊天的模型，但不是适合代理 IDE 工具链的模型。
 
 ## 验证顺序
 
@@ -63,9 +102,9 @@ Roo Code 官方文档特别说明：Roo Code 只使用 OpenAI native tool callin
 
 1. 当前面板确认是 Cline 或 Roo Code，不是 Cursor 原生 AI、Claude Code 或 Codex。
 2. Provider 确认选中 **OpenAI Compatible**。
-3. Base URL 确认是 `https://www.aigcwuji.com/v1`，没有多余空格。
-4. API Key 确认来自账户页面，且没有复制丢字符。
-5. Model ID 确认和账户页面完全一致。
+3. Base URL 确认是 `https://YOUR_API_DOMAIN/v1`，没有多余空格。
+4. API Key 确认来自控制台，且没有复制丢字符。
+5. Model ID 确认和控制台完全一致。
 6. 完全重启编辑器后再测一次，避免旧进程缓存。
 7. Roo Code 额外确认模型支持 OpenAI native tool calling。
 
@@ -73,32 +112,27 @@ Roo Code 官方文档特别说明：Roo Code 只使用 OpenAI native tool callin
 
 | 现象 | 可能原因 | 处理方式 |
 |---|---|---|
-| `Invalid API Key` / 401 | Key 错、复制不完整、填到了错误扩展 | 重新生成 Key，并确认填在 Cline/Roo Code 当前 profile |
-| `Model Not Found` | 模型名不在账户权限内，或填了官方模型别名 | 回账户页面复制完整 model id |
-| 连接失败 | Base URL 缺 `/v1`、网络不可达、服务地址填错 | 改为 `https://www.aigcwuji.com/v1` 后重启扩展 |
-| Cline 能聊但效果异常 | 模型参数或上下文窗口设置不匹配 | 先恢复默认高级参数，只保留 provider/base/key/model |
-| Roo Code 工具调用失败 | 模型不支持 OpenAI native tool calling，或兼容接口 tool calling 实现不完整 | 切换到支持 tool calling 的模型，再测文件读取/编辑 |
+| `Invalid API Key` / 401 | Key 错、复制不完整、填到了错误扩展 | 重新生成 Key，并确认填在 Cline / Roo 当前 profile |
+| `Model Not Found` | 模型名不在账户权限内，或填了别的平台模型别名 | 回控制台复制完整 model id |
+| 连接失败 | Base URL 缺 `/v1`、网络不可达、服务地址填错 | 改为 `https://YOUR_API_DOMAIN/v1` 后重启扩展 |
+| Cline 能聊但效果异常 | 模型参数或上下文窗口设置不匹配 | 先恢复默认高级参数，只保留 provider / base / key / model |
+| Roo Code 工具调用失败 | 模型不支持 OpenAI native tool calling，或兼容接口 tool calling 实现不完整 | 切换到支持 tool calling 的模型，再测文件读取 / 编辑 |
 | 改完没反应 | 扩展仍在读旧 profile 或旧进程 | 完全退出 VS Code / Cursor 后重新打开 |
 
 ## 和其他插件的区别
 
-- Cursor 原生 AI：看 [Cursor API 配置入口](/cursor-api-config)。
-- Claude Code 扩展：看 `~/.claude/settings.json`、Claude Code env 和 IDE Extension settings。
-- Codex 扩展：看 `~/.codex/config.toml`、`~/.codex/auth.json`。
-- Cline / Roo Code：看扩展内 **OpenAI Compatible** provider 表单。
+- Cursor 原生 AI：看 [Cursor API 配置入口](/cursor-api-config)
+- Claude Code 扩展：看 `~/.claude/settings.json`、Claude Code env 和 IDE Extension settings
+- Codex 扩展：看 `~/.codex/config.toml`、provider、profile 和 `wire_api`
+- Cline / Roo Code：看扩展内 **OpenAI Compatible** provider 表单
 
 如果你在同一个 Cursor 里装了多个 AI 扩展，排错时先确认当前报错来自哪个面板。不同扩展的登录态和配置文件不会自动同步。
 
-## 参考资料
-
-- Cline OpenAI Compatible provider: https://docs.cline.bot/provider-config/openai-compatible
-- Roo Code OpenAI Compatible provider: https://docs.roocode.com/providers/openai-compatible
-
 ## 相关页面
 
-- [VS Code / Cursor 插件接入 AI API 中转站指南](/vscode-cursor-plugin-guide)
 - [Cursor API 配置入口](/cursor-api-config)
 - [OpenAI 兼容 API Base URL 总指南](/openai-compatible-api)
-- [429 与余额排查](/troubleshooting-rate-limit)
 - [Model Not Found 排查](/troubleshooting-model-not-found)
+- [429 与余额排查](/troubleshooting-rate-limit)
+- [API Key 安全清单](/api-key-safety-checklist)
 - [回到首页](/)

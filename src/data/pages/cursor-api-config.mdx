@@ -1,6 +1,6 @@
 ---
 title: Cursor API 配置与插件入口
-description: Cursor 原生自定义 API、Claude Code 扩展、Codex 扩展三条路线怎么区分，base_url、API Key 与排错入口说明。
+description: Cursor 原生自定义 API、Claude Code 扩展、Codex 扩展、Cline、Roo Code 五条路线怎么分流诊断，包含 custom OpenAI URL 连接失败最小验证流程。
 tags:
   - docs-seo
   - productivity
@@ -9,96 +9,133 @@ tags:
 
 # Cursor API 配置与插件入口
 
-Cursor 场景最容易踩坑的地方，不是不会填 Base URL，而是**把 Cursor 自己的配置、Claude Code 扩展、Codex 扩展混成一件事**。
+Cursor 场景最容易踩坑的地方，不是不会填 Base URL，而是 **把 Cursor 自己的配置、Claude Code 扩展、Codex 扩展、Cline、Roo Code 混成一件事**。
 
 先记住一句话：
 
 > 你在 Cursor 里能用的 AI，不一定都走同一套 Key、同一套 provider、同一套配置文件。
 
-我又按官方资料核对了一遍，这里要更精确地拆开：Claude Code 在 VS Code/Cursor 里有独立的 **Extension settings**，用于控制扩展 UI/交互；同时也读取 Claude Code 共享 settings/env，例如 `~/.claude/settings.json`，这部分官方说明会被扩展和 CLI 共享。Codex IDE 扩展则使用 Codex CLI，并把默认模型、审批、sandbox 等底层行为放在共享 `~/.codex/config.toml`。所以 Cursor 原生 API、Claude Code 扩展、Codex 扩展三者不能混配，但 Claude Code 扩展也不是“所有配置都只存在插件里”。
+Claude Code 在 VS Code / Cursor 里有独立的 **Extension settings**，同时也会读取 Claude Code 共享 settings/env，例如 `~/.claude/settings.json`。Codex IDE 扩展则依赖 Codex CLI 共享配置，例如 `~/.codex/config.toml`。Cline / Roo Code 通常走各自扩展里的 OpenAI Compatible provider 表单。Cursor 原生 AI 则是另一套入口。
 
-## 先分清 3 条路线
+## 先分清 5 条路线
 
-| 你现在要配什么 | 应该看哪条路 | 核心配置 |
+| 你现在要配什么 | 应该看哪条路 | 核心配置 | 下一跳 |
+|---|---|---|---|
+| Cursor 自带 AI 走兼容 API | Cursor 原生 provider 设置 | `base_url` / API Key / 模型名 | [OpenAI 兼容 API](/openai-compatible-api) |
+| 在 Cursor 里使用 Claude Code 扩展 | Claude Code 扩展路线 | 扩展设置 + `~/.claude/settings.json` / env | [Claude Code 配置](/claude-code-api-proxy) |
+| 在 Cursor 里使用 Codex 扩展 | Codex 扩展路线 | `~/.codex/config.toml` + provider/model | [Codex API 配置](/codex-api-config) |
+| 在 Cursor 里使用 Cline | Cline 扩展路线 | OpenAI Compatible provider 表单 | [Cline / Roo Code 配置](/cline-roo-code-config) |
+| 在 Cursor 里使用 Roo Code | Roo Code 扩展路线 | OpenAI Compatible provider + tool calling 能力 | [Cline / Roo Code 配置](/cline-roo-code-config) |
+
+## Cursor custom OpenAI URL 连接失败：先做最小验证
+
+如果你遇到“curl 能通，但 Cursor custom OpenAI URL 不通”，先不要一口气改十几个地方，按最小验证流程走。
+
+### 最小验证流程
+
+1. 先确认当前报错来自 **Cursor 原生 AI**，不是 Claude Code / Codex / Cline / Roo 面板。
+2. Base URL 使用兼容接口常见写法：
+
+```text
+https://YOUR_API_DOMAIN/v1
+```
+
+3. API Key 使用当前项目 Key，不复用高权限主 Key。
+4. Model 使用控制台展示的模型名，不猜官方别名。
+5. 完全退出 Cursor，再重新打开，避免 IDE 进程没有继承新环境。
+6. 先发一句短 prompt，例如：
+
+```text
+请只回复“连接测试通过”。
+```
+
+7. 如果仍失败，再判断是 401、404、429、timeout 还是连接测试阶段就失败。
+
+## Cursor / Claude Code / Codex / Cline / Roo 分流诊断
+
+| 现象 | 更可能是哪条路线 | 先查什么 |
 |---|---|---|
-| Cursor 自带 AI 走兼容 API | Cursor 原生 provider 设置 | `base_url` / API Key / 模型名 |
-| 在 Cursor 里使用 Claude Code 扩展 | Claude Code 扩展路线 | VS Code/Cursor 扩展设置 + Claude Code 共享 settings/env，例如 `~/.claude/settings.json` |
-| 在 Cursor 里使用 Codex 扩展 | Codex 扩展路线 | Codex CLI/IDE 共享配置，例如 `~/.codex/config.toml` + `~/.codex/auth.json` |
+| Cursor 原生聊天失败，但扩展能用 | Cursor 原生 AI | custom OpenAI URL、API Key、模型名 |
+| Cursor 能聊，但 Claude Code 扩展报未登录 | Claude Code 扩展 | 扩展设置、`~/.claude/settings.json`、IDE env 继承 |
+| Codex 扩展仍走默认模型 | Codex 扩展 | `~/.codex/config.toml`、provider、profile、旧登录态 |
+| Cline 报 OpenAI compatible 配置错误 | Cline | Base URL、API Key、Model ID |
+| Roo 能聊天但工具调用失败 | Roo Code | 模型是否支持 OpenAI native tool calling |
+| 全部都失败 | 共享 Key / 共享线路 / 余额问题 | 先查 Key、账户、余额、状态说明 |
 
-## 路线一：Cursor 原生自定义 API
+## Cursor 原生 AI：连接测试矩阵
 
-如果你不打算额外装插件，只想让 Cursor 自己走中转站，优先确认这几个点：
+| 检查项 | 目标值 | 失败时下一跳 |
+|---|---|---|
+| 入口 | Cursor 原生 provider 设置 | 若你其实在用扩展，改这里不会生效 |
+| Base URL | `https://YOUR_API_DOMAIN/v1` | 看 [OpenAI 兼容 API](/openai-compatible-api) |
+| API Key | 当前项目 Key | 看 [401 Invalid Key](/troubleshooting-401-invalid-key) |
+| Model | 控制台展示 model id | 看 [Model Not Found](/troubleshooting-model-not-found) |
+| 最小验证 | 短 prompt | 若 429，看 [429 排查](/troubleshooting-rate-limit) |
 
-- `base_url` 使用 `https://www.aigcwuji.com/v1`
-- API Key 使用账户页面生成值
-- 模型名以账户页面展示为准
-- 遇到 401、404、429 时，先查 Key、路径、模型和余额，不要先卸载重装
+## Claude Code 扩展：Cursor 里单独排查什么
 
-这条路线本质上属于 OpenAI compatible API，用法可继续看：
+Claude Code 扩展和 Cursor 原生 AI 不是同一个配置入口。重点分两层：
 
-- [OpenAI 兼容 API Base URL 总指南](/openai-compatible-api)
+- **扩展设置层**：控制扩展 UI、权限模式、打开位置等。
+- **Claude Code 共享配置层**：`~/.claude/settings.json`、项目 `.claude/settings.json` / `.claude/settings.local.json`、shell 环境变量。
 
-## 路线二：在 Cursor 里用 Claude Code 扩展
-
-Claude Code 官方文档已经提供 Cursor 扩展安装入口。它更像是把 Claude Code 的 VS Code 工作流直接搬进 Cursor：
-
-- 图形化聊天面板
-- 计划审阅与 Diff 审批
-- `@文件` / `@目录` 引用
-- 多会话
-- CLI 与 IDE 联动
-
-如果你要让它走中转站，重点拆两层看：
-
-- **扩展设置层**：VS Code/Cursor 的 Extensions → Claude Code，主要控制扩展 UI、权限模式、打开位置、是否用 terminal 模式。
-- **Claude Code 共享配置层**：`~/.claude/settings.json`、项目 `.claude/settings.json` / `.claude/settings.local.json` 或 shell 环境变量，主要控制 gateway/env、hooks、MCP、allowed commands 等 Claude Code 本体行为。
-
-不要只改 Cursor 原生 AI 的 provider；那通常不会影响 Claude Code 扩展。
+如果你要让它走中转站，不要只改 Cursor 原生 AI 的 provider；那通常不会影响 Claude Code 扩展。
 
 重点看：
 
 - [VS Code / Cursor 插件接入 AI API 中转站指南](/vscode-cursor-plugin-guide)
 - [Claude Code 中转站手动配置教程](/claude-code-api-proxy)
 
-## 路线三：在 Cursor 里用 Codex 扩展
+## Codex 扩展：Cursor 里单独排查什么
 
-Codex 官方文档明确说明 IDE 扩展支持 Cursor，但 Cursor 的 Activity Bar 默认可能是横向布局，所以扩展图标有时会被折叠。常见处理顺序是：
+Codex 扩展依赖的是 Codex CLI/IDE 共享配置。常见排查顺序：
 
-1. 先确认已安装 Codex 扩展。
-2. 如果没看到图标，检查 Activity Bar 是否折叠。
-3. 必要时临时改成竖向布局。
-4. 把 Codex 拖到右侧边栏。
-
-如果你要让它走中转站，重点看 Codex 自己的 `~/.codex/config.toml` 和 `auth.json`。不要只改 Cursor 原生 AI 的 provider；那通常不会影响 Codex 扩展。
+1. 确认当前面板真的是 Codex 扩展。
+2. 看 `~/.codex/config.toml` 里到底是 `openai_base_url` 还是自定义 `model_provider` 生效。
+3. 检查旧 profile 或 CLI 参数是否覆盖。
+4. 再检查 model、Base URL 和 `wire_api`。
 
 重点看：
 
-- [VS Code / Cursor 插件接入 AI API 中转站指南](/vscode-cursor-plugin-guide)
 - [Codex API 手动配置指南](/codex-api-config)
 
-## 最常见的 4 类误判
+## Cline / Roo Code：在 Cursor 里要单独看什么
 
-| 现象 | 实际问题 | 先查什么 |
-|---|---|---|
-| Cursor 能用，但 Claude Code 扩展报未登录 | 扩展登录态、编辑器继承环境变量、或 Claude Code settings/env 没生效 | VS Code 扩展设置、`~/.claude/settings.json`、编辑器重启 |
-| Codex 扩展还在走默认模型 | `model_provider` 没切到 custom 或旧登录态覆盖 | `~/.codex/config.toml`、`auth.json` |
-| 改了 Cursor base_url，但扩展没变化 | 你改的是 Cursor 原生 AI，不是扩展 | 当前到底是哪一个面板在报错 |
-| 所有东西都失败 | 可能是统一 Key、统一线路或余额问题 | 先查 Key、账户、余额、公告 |
+Cline / Roo Code 往往用的是各自扩展里的 OpenAI Compatible provider 表单，不会自动读取 Claude Code 的 `ANTHROPIC_BASE_URL`，也不会自动继承 Codex 的 `config.toml`。
+
+如果你在同一个 Cursor 里装了多个 AI 扩展，排错时先确认当前报错来自哪个面板。不同扩展的登录态和配置文件不会自动同步。
+
+## IDE 进程、环境变量与设置覆盖
+
+Cursor 里常见的不是“字段不会填”，而是“你改完了，但当前进程没吃到”。
+
+优先检查：
+
+1. 你改的是原生 AI、扩展设置，还是共享配置文件。
+2. 当前 Cursor 进程是否重启过。
+3. 内置终端和外部终端是否读取同一套环境变量。
+4. 项目级配置是否覆盖了用户级配置。
+5. 你当前打开的是哪个扩展面板。
 
 ## 结论
 
-如果你是来找“Cursor 怎么走中转站”的，先别急着问一个问题。先拆成这三个：
+如果你是来找“Cursor 怎么走中转站”的，先别急着只问一个问题。先拆成这五个：
 
 1. 我现在用的是 Cursor 原生 AI，还是扩展？
-2. 扩展是 Claude Code，还是 Codex？
-3. 当前报错属于 Key、Base URL、模型名，还是旧进程/旧登录态？
+2. 扩展是 Claude Code、Codex、Cline，还是 Roo Code？
+3. 当前报错属于 Key、Base URL、模型名，还是工具调用能力？
+4. 我改的是共享配置，还是只改了某个扩展 UI？
+5. IDE 进程是否已经重启并继承新配置？
 
-把这三个问题拆清，排错速度会快很多。
+把这几个问题拆清，排错速度会快很多。
 
 ## 相关页面
 
 - [VS Code / Cursor 插件接入 AI API 中转站指南](/vscode-cursor-plugin-guide)
 - [Claude Code 中转站手动配置教程](/claude-code-api-proxy)
 - [Codex API 手动配置指南](/codex-api-config)
+- [Cline / Roo Code 配置入口](/cline-roo-code-config)
 - [OpenAI 兼容 API Base URL 总指南](/openai-compatible-api)
+- [401 Invalid Key 排查](/troubleshooting-401-invalid-key)
+- [Model Not Found 排查](/troubleshooting-model-not-found)
 - [429 与余额排查](/troubleshooting-rate-limit)
