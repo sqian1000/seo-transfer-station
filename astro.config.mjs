@@ -20,7 +20,13 @@ export default defineConfig({
     mdx(),
     icon(),
     sitemap({
-      filter: (page) => !new URL(page).pathname.startsWith('/go/')
+      filter: (page) => {
+        const pathname = new URL(page).pathname;
+        return !pathname.startsWith('/go/')
+          && !pathname.startsWith('/blog/')
+          && pathname !== '/novel-tools/'
+          && pathname !== '/go-click-analytics/';
+      }
     })
   ],
   vite: {
