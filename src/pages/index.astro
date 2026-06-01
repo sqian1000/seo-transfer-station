@@ -10,14 +10,16 @@ const paths = [
 ];
 
 const serviceLinks = [
-  { title: '中转站地址', text: '客户端配置统一使用这个地址。Claude Code / Codex 直接填写，OpenAI 兼容 SDK 通常使用 /v1。', href: 'https://www.aigcwuji.com', label: 'https://www.aigcwuji.com' },
+  { title: '中转站地址', text: '客户端配置统一使用这个地址。Claude Code 使用根域名，Codex / OpenAI 兼容 SDK 通常使用 /v1。', href: 'https://www.aigcwuji.com/v1', label: 'https://www.aigcwuji.com/v1' },
   { title: '在线购买兑换码', text: '链动小店支持在线购买兑换码。新用户建议先小额测试，跑通后再追加。', href: 'https://pay.ldxp.cn/shop/O5JD5OBD', label: '立即购买' },
   { title: 'QQ 售后交流群', text: '遇到配置、额度、连接失败或使用问题，可以加入群内咨询售后。', href: 'https://qm.qq.com/q/j1Bc0GVNv4', label: '加入交流群' },
+  { title: 'TG 售后群', text: 'Telegram 用户可以加入 TG 群，反馈配置、额度、线路和客户端接入问题。', href: 'https://t.me/+pETqPR9g0xhhNjg1', label: '加入 TG 群' },
+  { title: 'TG 订阅频道', text: '订阅 Telegram 频道，获取线路通知、使用说明更新和服务公告。', href: 'https://t.me/aigc_wuji', label: '订阅频道' },
 ];
 
 const endpointRules = [
   ['API Key', '在账户页面生成或查看，示例统一写成 sk-xxxxxxxx。不要写进公开仓库、截图、README 或聊天记录。'],
-  ['Base URL', '客户端统一填写 https://www.aigcwuji.com；OpenAI 兼容 SDK 和 OpenClaw 通常使用 https://www.aigcwuji.com/v1。'],
+  ['Base URL', 'Claude Code 通常填写 https://www.aigcwuji.com；Codex、OpenAI 兼容 SDK 和 OpenClaw 通常使用 https://www.aigcwuji.com/v1。'],
   ['模型名', '以账户页面展示为准，不猜测官方 model id。Claude Code 和 Codex 的字段名不同。'],
   ['验证方式', '配置后完全关闭工具和终端，重开后发送“请回复配置已生效”。'],
 ];
@@ -54,7 +56,7 @@ const troubleshooting = [
 
 const faq = [
   ['这个站应该承接哪些搜索？', '核心解答 Claude Code 中转站、Codex API 配置、VS Code 插件、中转站 Cursor 配置、OpenAI compatible base_url、API Key 配置、401/model not found/429 排查等实际使用问题。'],
-  ['为什么统一使用 531288 中转地址？', '本站统一使用 https://www.aigcwuji.com，便于 Claude Code、Codex 与 OpenAI 兼容客户端直接复制配置。若服务地址后续调整，会在官网同步更新。'],
+  ['为什么统一使用 531288 中转地址？', '本站统一使用 https://www.aigcwuji.com 作为根域名；Codex 与 OpenAI 兼容客户端按页面示例加 /v1。若服务地址后续调整，会在官网同步更新。'],
   ['Claude Code 应该用 ANTHROPIC_API_KEY 还是 ANTHROPIC_AUTH_TOKEN？', '不同版本和接入方式可能读取字段不同。通用文档优先写 settings.json 的 env，并提醒以客户端当前文档和账户页面显示为准；如果已有配置，不要清空整文件，只合并 env 字段。'],
   ['VS Code / Cursor 装了插件，为什么还是没走中转？', '常见原因是扩展仍在读旧登录态、编辑器没有继承新的环境变量、配置文件改错目录，或者你改的是 Cursor 原生 API 而不是 Claude Code / Codex 插件本身。'],
   ['Codex 的 Key 写在哪里？', '写在用户目录的 ~/.codex/auth.json 或 Windows 用户目录对应文件里，不要写入项目仓库。字段通常是 OPENAI_API_KEY。'],
@@ -139,8 +141,8 @@ const jsonLd = {
                 </div>
               ))}
             </div>
-            <pre class="mt-4 overflow-auto rounded-3xl border border-white/10 bg-black/35 p-4 text-xs leading-6 text-cyan-100"><code>Base URL：https://www.aigcwuji.com
-OpenAI / OpenClaw 兼容地址：https://www.aigcwuji.com/v1
+            <pre class="mt-4 overflow-auto rounded-3xl border border-white/10 bg-black/35 p-4 text-xs leading-6 text-cyan-100"><code>Claude Code 地址：https://www.aigcwuji.com
+Codex / OpenAI / OpenClaw 兼容地址：https://www.aigcwuji.com/v1
 示例 Key：sk-xxxxxxxxxxxxxxxx
 验证消息：请回复“配置已生效”</code></pre>
           </div>
@@ -149,7 +151,7 @@ OpenAI / OpenClaw 兼容地址：https://www.aigcwuji.com/v1
     </section>
 
     <section class="mx-auto max-w-7xl px-5 py-10 md:px-8 lg:px-12">
-      <div class="grid gap-5 md:grid-cols-3">
+      <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {serviceLinks.map((item) => (
           <a href={item.href} class="rounded-[1.7rem] border border-cyan-300/20 bg-slate-950/70 p-6 no-underline shadow-xl shadow-black/20 transition hover:-translate-y-1 hover:border-cyan-300/60 hover:bg-cyan-300/10">
             <p class="text-sm font-bold uppercase tracking-[.2em] text-cyan-300">服务入口</p>
@@ -217,7 +219,7 @@ model = "gpt-5.4"
 
 [model_providers.custom]
 name = "custom"
-base_url = "https://www.aigcwuji.com"
+base_url = "https://www.aigcwuji.com/v1"
 wire_api = "responses"
 requires_openai_auth = true
 
